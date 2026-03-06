@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bagsapp | A simple GameFi</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body {
+    width: 100%;
+    overflow-x: hidden; /* Mencegah geser kiri-kanan */
+}
+
+#gameContainer {
+    width: 90%;      /* Ubah dari 320px menjadi 90% lebar layar */
+    max-width: 320px; /* Tapi tetap maksimal 320px */
+    height: auto;     /* Biarkan tinggi menyesuaikan */
+    aspect-ratio: 320 / 480; /* Menjaga proporsi game */
+}
+
+#gameCanvas {
+    width: 100%;     /* Canvas akan mengisi lebar container */
+    height: 100%;
+}
+
+body { 
+    margin: 0; min-height: 100vh;
+    background: radial-gradient(circle, #1a1a1a 0%, #050505 100%);
+    color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif;
+    display: flex; flex-direction: column; align-items: center; padding-bottom: 40px;
+}
+.credits { margin-top:25px;color:#555;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;text-align:center;border-top:1px solid #222;padding-top:15px;width:100%; }
+#leaderboardList li{padding:6px;border-bottom:1px solid #222;font-size:12px;display:flex;justify-content:space-between;}
+.caution-box { width:300px;margin-top:20px;padding:16px;background: rgba(255,0,0,0.05);border:1px solid #ff0000;border-radius:10px;color:#ffcccc;font-size:13px;line-height:1.6; }
+.caution-box h4 { color:#ff0000;margin-bottom:10px;text-align:center; }
+.caution-row { display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,0,0,0.2);}
+.caution-row:last-child{border-bottom:none;}
+.caution-row span:first-child { font-weight:bold;color:#ff4444; }
+.warning-text { margin-top:10px;text-align:center;font-weight:bold;color:#ff4444;border-top:1px solid rgba(255,0,0,0.3);padding-top:8px;}
+ul{padding-left:18px;line-height:1.6;}
+footer li{margin-bottom:6px;}
+.rank-badge{background:#111;padding:3px 6px;border-radius:6px;border:1px solid #00ff00;font-size:11px;margin-right:6px;}
+.dev-banner { background: #000; color:#00ff00; padding:8px;border-bottom:1px solid #333;font-size:10px;text-transform:uppercase;letter-spacing:2px;width:100%;text-align:center;}
+h1 { display:flex;justify-content:center;align-items:center;font-size:32px;margin:20px 0; }
+.title-logo { width:60px;height:auto;margin-right:15px; }
+.buy-container { display:flex;justify-content:center;gap:10px;margin-top:20px;width:300px;}
+.buy-button-small { flex:1;padding:12px 10px;background:#00ff00;color:#000;text-align:center;text-decoration:none;font-weight:bold;border-radius:20px;font-size:11px;transition:0.3s;border:2px solid #00ff00;}
+.buy-button-small:hover { background:transparent;color:#00ff00;}
+.stats { display:none;text-align:center;margin-bottom:10px;font-size:14px;color:#00ff00; }
+.marquee-container { width:320px;overflow:hidden;margin:10px 0;white-space:nowrap;border:1px solid #333;padding:5px 0;color:#ffffff;font-size:11px;text-transform:uppercase;background:rgba(255,255,255,0.05);}
+.marquee-text { display:inline-block;padding-left:100%;animation:marquee 10s linear infinite; }
+@keyframes marquee {0%{transform:translate(0,0);}100%{transform:translate(-100%,0);}}
+#gameContainer { position:relative;width:320px;height:480px;border-radius:15px;overflow:hidden;border:2px solid #333;box-shadow:0 0 30px rgba(0,255,0,0.15);background:#000; }
+#menuOverlay { position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:10; }
+button { padding:12px 25px;margin:10px;cursor:pointer;background:transparent;color:#00ff00;border:2px solid #00ff00;border-radius:25px;font-weight:bold;transition:0.3s;width:200px; }
+button:hover { background:#00ff00;color:#000;box-shadow:0 0 15px #00ff00; }
+#liveLeaderboard { color:#00ff00;font-size:12px;margin-top:20px;width:320px;text-align:center; }
+#leaderboardList { background: rgba(0,255,0,0.05); border:1px solid #00ff00;border-radius:10px;padding:10px;list-style:none; }
+.info-container { width:300px;margin-top:20px;padding:15px;background:rgba(0,255,0,0.05);border:1px solid #00ff00;border-radius:10px;text-align:center;color:#00ff00;font-size:13px; }
+footer { width:300px;margin-top:30px;padding:15px;background:#050505;border:1px solid #333;border-radius:10px;text-align:left;color:#aaa;font-size:11px; }
+h4 { color:#00ff00;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px; }
+</style>
+</head>
+<body>
+
+<div class="dev-banner">💰 Flappy Bags — A Simple GameFi Experience</div>
+<h1>
+<img src="logo1.jpg" alt="Bagsapp Logo" class="title-logo">
+Flappy Bags
+</h1>
+
+<div id="marqueeBox" class="marquee-container">
+    <div class="marquee-text">✨ A simple game competition on Bagsapp ✨</div>
+</div>
+
+<div class="stats">
+    <p id="scoreText">Skor: 0</p>
+    <p id="highScoreText">High Score: 0</p>
+</div>
+
+<div id="gameContainer">
+    <div id="menuOverlay">
+        <h2 style="color: #00ff00;">MAIN MENU</h2>
+        <input type="text" id="walletInput" placeholder="Input your wallet address" style="padding: 10px; border-radius: 10px; margin-bottom: 10px; width: 200px;">
+        <button onclick="startGame()">START GAME</button>
+        <button onclick="loadLeaderboard()">LEADERBOARD</button>
+        <button id="soundBtn" onclick="toggleSound()">SOUND: ON</button>
+    </div>
+    <div id="newRecordMsg" style="position:absolute;top:20%;width:100%;color:#ffff00;font-weight:bold;font-size:24px;display:none;text-shadow:0 0 10px #ff0000;z-index:5;">🏆 NEW HIGH SCORE!</div>
+    <canvas id="gameCanvas" width="320" height="480"></canvas>
+</div>
+
+<!-- Tambahan HTML di #gameContainer, tepat setelah <canvas> -->
+<div id="gameOverOverlay" style="
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.85); color:#00ff00;
+    display:none; flex-direction:column; justify-content:center; align-items:center;
+    z-index:20; border-radius:15px;
+">
+    <h2>GAME OVER</h2>
+    <p id="finalScoreText">Score: 0</p>
+    <p id="finalHighScoreText">High Score: 0</p>
+    <button onclick="restartGame()">RESTART</button>
+    <button onclick="shareScore()">SHARE SCORE</button>
+    <button onclick="quitGame()">QUIT</button>
+    <p style="margin-top:10px; font-size:12px; color:#aaa;">Your wallet: <span id="walletDisplay">-</span></p>
+</div>
+
+<div id="liveLeaderboard">
+    <strong>LIVE LEADERBOARD:</strong>
+    <ul id="leaderboardList"></ul>
+</div>
+
+<div class="info-container">
+<strong>📊 PLAYER STATS</strong>
+<p id="playerRank">Rank: -</p>
+<p id="playerScore">Best Score: -</p>
+</div>
+
+<div class="caution-box">
+<h4>⚠️ CAUTION</h4>
+<div class="caution-row"><span>Name:</span> <span>Flappy Bags Coin</span></div>
+<div class="caution-row"><span>Ticker:</span> <span>$FlappyBags</span></div>
+<div class="caution-row"><span>Contract:</span> <span>BAGS</span></div>
+<div class="warning-text">"No need connect wallet for your safety"</div>
+<div class="warning-text">Please make sure your wallet address is correct.</div>
+</div>
+
+<div class="buy-container">
+<a href="URL_BAGSAPP_DISINI" class="buy-button-small" target="_blank">BUY ON BAGSAPP</a>
+<a href="https://jup.ag/swap/SOL-BAGS_CONTRACT_ADDRESS_DISINI" class="buy-button-small" target="_blank">BUY ON JUPITER</a>
+</div>
+
+<footer>
+<h4>🏆 Competition Rules</h4>
+<ul>
+<li><strong>Eligibility:</strong> Must hold at least 200,000 $FlappyBags Coins.</li>
+<li><strong>Rewards:</strong> Top 10 leaderboard players share 20% of royalties.</li>
+<li><strong>Liquidity:</strong> 40% of total royalties are locked for liquidity.</li>
+<li><strong>Verification:</strong> Eligibility (including the 200k $FlappyBags coin holding requirement) will be checked manually. Wallets that do not meet the criteria will be disqualified, and the prize will be passed to the next eligible player on the leaderboard.</li>
+<li><strong>Distribution:</strong> Rewards will be automatically sent to participating wallets after snapshot.</li>
+</ul>
+<p style="text-align:center;font-style:italic;">Developer's decision is final.</p>
+</footer>
+
+<div class="credits">
+<p>Built with ❤️ by <strong>Flappy Bags</strong> | © 2026</p>
+<p><small>Powered by BagsApp</small></p>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+const SUPABASE_URL = "https://httrpszijmmegabceslr.supabase.co";
+const SUPABASE_KEY = "sb_publishable_69Vl5Jd1Vyj_-4NrA7nl6Q_KQw1h1yi";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const bgm = new Audio("sound.wav"); bgm.loop = true; bgm.volume = 0.3;
+const jumpSound = new Audio("jump.wav");
+const crashSound = new Audio("crash.wav");
+const birdImg = new Image(); birdImg.src = "logo.png";
+
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let birdY = 200, velocity = 0, gravity = 0.22;
+let score = 0, gameRunning = false, isSoundEnabled = true, spawnTimer = 0;
+let pipes = [], coins = [], playerHighScore = 0, isNewHighScore = false, gameStartTime = 0, isGameOver = false;
+let animationId = null;
+
+// ===== UTILITY =====
+function formatWallet(w){ return w ? w.slice(0,6)+"..."+w.slice(-4) : "unknown"; }
+function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// ===== GAME LOOP =====
+function loop(){
+    if(!gameRunning) return;
+
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0,0,320,480);
+
+    velocity += gravity;
+    birdY += velocity;
+    ctx.drawImage(birdImg,50,birdY,40,40);
+
+    for(let i=pipes.length-1;i>=0;i--){
+        const p = pipes[i];
+        p.x -= 2.6;
+        ctx.fillStyle="#ff0000"; ctx.fillRect(p.x,0,45,p.y);
+        ctx.fillStyle="#00ff00"; ctx.fillRect(p.x,p.y+130,45,480);
+
+        if(50+40>p.x && 50<p.x+45 && (birdY<p.y || birdY+40>p.y+130)){
+            gameOver(); return;
+        }
+        if(p.x<40 && !p.passed){ 
+            score++; p.passed=true;
+            coins.push({x:160,y:birdY,life:30});
+            document.getElementById("scoreText").innerText="Skor: "+score;
+        }
+        if(p.x<-60) pipes.splice(i,1);
+    }
+
+    for(let i=coins.length-1;i>=0;i--){
+        let c = coins[i];
+        ctx.fillStyle="#FFD700"; ctx.beginPath(); ctx.arc(c.x,c.y,6,0,Math.PI*2); ctx.fill();
+        c.y -= 1; c.life--; if(c.life<=0) coins.splice(i,1);
+    }
+
+    spawnTimer++;
+    if(spawnTimer>110){ pipes.push({x:320,y:Math.random()*220+40,passed:false}); spawnTimer=0; }
+
+    if(birdY>440 || birdY<0){ gameOver(); return; }
+
+    animationId = requestAnimationFrame(loop);
+}
+
+// ===== EVENTS =====
+let lastTap = 0;
+function jump(){
+    const now = Date.now();
+    if(now - lastTap < 120) return;
+    lastTap = now;
+    if(gameRunning){ velocity = -4.2; if(isSoundEnabled){ jumpSound.currentTime=0; jumpSound.play(); } }
+}
+
+// ===== GAME FUNCTIONS =====
+async function startGame(){
+    const walletInput = document.getElementById("walletInput");
+    let wallet = localStorage.getItem("userWallet") || walletInput.value.trim();
+    if(!wallet){ alert("Masukkan Wallet Address terlebih dahulu!"); return; }
+    localStorage.setItem("userWallet", wallet);
+    walletInput.value = wallet; walletInput.readOnly = true;
+
+    if(!birdImg.complete) await new Promise(r=>birdImg.onload=r);
+    await countdown();
+
+    document.getElementById("menuOverlay").style.display="none";
+    document.querySelector(".stats").style.display="block";
+    document.getElementById("scoreText").innerText="Skor: 0";
+    document.getElementById("marqueeBox").style.display="none";
+
+    birdY=200; velocity=0; score=0; spawnTimer=0;
+    pipes=[{x:320,y:150,passed:false}]; coins=[]; gameRunning=true; isGameOver=false;
+    gameStartTime = Date.now();
+
+    // aktifkan input jump
+    window.addEventListener("mousedown", jump);
+    window.addEventListener("touchstart", jump);
+
+    if(isSoundEnabled) bgm.play().catch(()=>{});
+    loop();
+}
+
+async function countdown(){
+    const overlay=document.getElementById("menuOverlay");
+    overlay.querySelectorAll("*").forEach(el=>el.style.display="none");
+    const timer=document.createElement("h2"); timer.style.color="#00ff00"; timer.style.fontSize="50px"; overlay.appendChild(timer);
+    for(let i=3;i>0;i--){ timer.innerText=i; await wait(800); }
+    timer.remove();
+}
+
+// ===== GAME OVER =====
+function gameOver(){
+    if(isGameOver) return;
+    isGameOver = true;
+    gameRunning = false;
+    if(animationId) cancelAnimationFrame(animationId);
+    bgm.pause();
+    if(isSoundEnabled) crashSound.play();
+    document.querySelector(".stats").style.display="none";
+
+    const wallet=document.getElementById("walletInput").value.trim() || "anonymous";
+
+    saveScore(wallet).then(()=>{
+        document.getElementById("finalScoreText").innerText = "Score: "+score;
+        document.getElementById("finalHighScoreText").innerText = "High Score: "+playerHighScore;
+        document.getElementById("walletDisplay").innerText = wallet;
+        document.getElementById("gameOverOverlay").style.display="flex";
+    });
+
+    // hapus event listener jump agar tidak mengganggu menu
+    window.removeEventListener("mousedown", jump);
+    window.removeEventListener("touchstart", jump);
+}
+
+// ===== RESTART =====
+window.restartGame = function(){
+    document.getElementById("gameOverOverlay").style.display = "none";
+
+    birdY=200; velocity=0; score=0; spawnTimer=0; pipes=[{x:320,y:150,passed:false}]; coins=[];
+    gameRunning=true; isGameOver=false; gameStartTime=Date.now();
+    document.getElementById("scoreText").innerText="Skor: 0";
+    document.querySelector(".stats").style.display="block";
+    document.getElementById("marqueeBox").style.display="none";
+
+    window.addEventListener("mousedown", jump);
+    window.addEventListener("touchstart", jump);
+
+    if(isSoundEnabled) bgm.play().catch(()=>{});
+    loop();
+};
+
+window.quitGame = function(){
+    // 1. Hentikan loop animasi secara paksa
+    gameRunning = false;
+    isGameOver = true;
+    if(animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+    }
+
+    // 2. Bersihkan event listener agar tidak terjadi double-tap atau error
+    window.removeEventListener("mousedown", jump);
+    window.removeEventListener("touchstart", jump);
+
+    // 3. Reset variabel game ke kondisi awal
+    birdY = 200; 
+    velocity = 0; 
+    score = 0; 
+    spawnTimer = 0; 
+    pipes = []; 
+    coins = [];
+
+    // 4. Pastikan UI kembali ke kondisi Menu
+    document.getElementById("gameOverOverlay").style.display = "none";
+    document.getElementById("menuOverlay").style.display = "flex";
+    document.querySelector(".stats").style.display = "none";
+    document.getElementById("marqueeBox").style.display = "block";
+    document.getElementById("scoreText").innerText = "Skor: 0";
+
+    // 5. Matikan musik
+    bgm.pause();
+    bgm.currentTime = 0; // Reset posisi musik ke awal
+};
+
+
+// ===== SHARE SCORE =====
+window.shareScore = function(){
+    const wallet=document.getElementById("walletInput").value || "anonymous";
+    const text = `I scored ${score} points in Flappy Bags! Wallet: ${wallet}`;
+    navigator.clipboard.writeText(text).then(()=>{ alert("Score copied! 🎉"); });
+};
+
+// ===== SAVE SCORE =====
+async function saveScore(wallet){
+    try{
+        const playTime=(Date.now()-gameStartTime)/1000;
+        if(score>playTime*4){ console.log("Cheat blocked"); return; }
+
+        const {data:existing} = await supabaseClient.from("flappy_bags_scores").select("score").eq("wallet",wallet).maybeSingle();
+        if(!existing){
+            await supabaseClient.from("flappy_bags_scores").insert({wallet,score});
+            playerHighScore=score; isNewHighScore=true;
+        } else {
+            playerHighScore=existing.score;
+            if(score>existing.score){
+                await supabaseClient.from("flappy_bags_scores").update({score}).eq("wallet",wallet);
+                playerHighScore=score; isNewHighScore=true;
+            }
+        }
+    } catch(e){ console.log("Save error:",e); }
+}
+
+// ===== LEADERBOARD =====
+async function loadLeaderboard(){
+    const {data,error} = await supabaseClient.from("flappy_bags_scores").select("wallet,score").order("score",{ascending:false}).limit(10);
+    if(error){ console.log(error); return; }
+    const list = document.getElementById("leaderboardList"); list.innerHTML="";
+    const myWallet = localStorage.getItem("userWallet");
+    data.forEach((row,i)=>{
+        const li = document.createElement("li");
+        let medal="#"+(i+1); if(i===0) medal="🥇"; if(i===1) medal="🥈"; if(i===2) medal="🥉";
+        li.innerHTML=`<span class="rank-badge">${medal}</span>${formatWallet(row.wallet)}<span>${row.score}</span>`;
+        if(row.wallet===myWallet){ li.style.color="#00ff90"; li.style.fontWeight="bold"; }
+        list.appendChild(li);
+    });
+    loadPlayerStats();
+}
+
+async function loadPlayerStats(){
+    const wallet = localStorage.getItem("userWallet"); if(!wallet) return;
+    const {data} = await supabaseClient.from("flappy_bags_scores").select("wallet,score").order("score",{ascending:false});
+    if(!data) return;
+    const rank = data.findIndex(p=>p.wallet===wallet)+1;
+    const player = data.find(p=>p.wallet===wallet);
+    if(rank>0) document.getElementById("playerRank").innerText="Rank: #"+rank;
+    if(player) document.getElementById("playerScore").innerText="Best Score: "+player.score;
+}
+
+// ===== LIVE LEADERBOARD SUBSCRIBE =====
+supabaseClient.channel("leaderboard-live").on("postgres_changes",{event:"*",schema:"public",table:"flappy_bags_scores"},()=>{ loadLeaderboard(); }).subscribe();
+
+// ===== SOUND TOGGLE =====
+window.toggleSound=function(){
+    isSoundEnabled=!isSoundEnabled;
+    document.getElementById("soundBtn").innerText=isSoundEnabled?"SOUND: ON":"SOUND: OFF";
+    if(!isSoundEnabled) bgm.pause(); else if(gameRunning) bgm.play();
+};
+
+// EXPORT GLOBAL
+window.startGame=startGame;
+window.loadLeaderboard = loadLeaderboard;
+
+// Load leaderboard on start
+loadLeaderboard();
+
+});
+</script>
+
+</body>
+</html>
