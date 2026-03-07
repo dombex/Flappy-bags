@@ -55,10 +55,30 @@ transform:scale(0.95);
     font-size: 12px;
 }
 
+#leaderboardOverlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9); z-index: 1000;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+}
+.lb-panel {
+    background: #111; border: 2px solid #00ff00; padding: 20px;
+    width: 85%; max-width: 300px; border-radius: 15px; text-align: center;
+}
+.lb-list {
+    list-style: none; padding: 0; margin: 15px 0; max-height: 250px; overflow-y: auto;
+}
+
 
 
 .credits { margin-top:25px;color:#555;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;text-align:center;border-top:1px solid #222;padding-top:15px;width:100%; }
-#leaderboardList li{padding:6px;border-bottom:1px solid #222;font-size:12px;display:flex;justify-content:space-between;}
+#leaderboardList li,
+#popupLeaderboardList li{
+padding:6px;
+border-bottom:1px solid #222;
+font-size:12px;
+display:flex;
+justify-content:space-between;
+}
 .caution-box { width:300px;margin-top:20px;padding:16px;background: rgba(255,0,0,0.05);border:1px solid #ff0000;border-radius:10px;color:#ffcccc;font-size:13px;line-height:1.6; }
 .caution-box h4 { color:#ff0000;margin-bottom:10px;text-align:center; }
 .caution-row { display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,0,0,0.2);}
@@ -121,7 +141,7 @@ Flappy Bags
         <h2 style="color: #00ff00;">MAIN MENU</h2>
         <input type="text" id="walletInput" placeholder="Input your wallet address" style="padding: 10px; border-radius: 10px; margin-bottom: 10px; width: 200px;">
         <button onclick="startGame()">START GAME</button>
-        <button onclick="loadLeaderboard()">LEADERBOARD</button>
+        <button onclick="showLeaderboard()">LEADERBOARD</button>
         <button id="soundBtn" onclick="toggleSound()">SOUND: ON</button>
     </div>
     <div id="newRecordMsg" style="position:absolute;top:20%;width:100%;color:#ffff00;font-weight:bold;font-size:24px;display:none;text-shadow:0 0 10px #ff0000;z-index:5;">🏆 NEW HIGH SCORE!</div>
@@ -161,6 +181,19 @@ TAP SCREEN TO JUMP
     <strong>LIVE LEADERBOARD:</strong>
     <ul id="leaderboardList"></ul>
 </div>
+
+<div id="leaderboardOverlay" onclick="closeLeaderboard()">
+    <div class="lb-panel" onclick="event.stopPropagation()">
+        <h2 style="color:#00ff00;">🏆 LEADERBOARD</h2>
+        <div class="info-container" style="width:100%; box-sizing:border-box;">
+            <p id="myRankDisplay">Rank: Loading...</p>
+            <p id="myScoreDisplay">Best: -</p>
+        </div>
+        <ul id="popupLeaderboardList" class="lb-list"></ul>
+        <button onclick="closeLeaderboard()">TUTUP</button>
+    </div>
+</div>
+
 
 <div class="info-container">
 <strong>📊 PLAYER STATS</strong>
@@ -226,289 +259,628 @@ TAP SCREEN TO JUMP
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded",()=>{
 
-const SUPABASE_URL = "https://httrpszijmmegabceslr.supabase.co";
-const SUPABASE_KEY = "sb_publishable_69Vl5Jd1Vyj_-4NrA7nl6Q_KQw1h1yi";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+/* =========================
+SUPABASE
+========================= */
 
-const bgm = new Audio("sound.wav"); bgm.loop = true; bgm.volume = 0.3;
-const jumpSound = new Audio("jump.wav");
-const crashSound = new Audio("crash.wav");
-const birdImg = new Image(); birdImg.src = "logo.png";
+const SUPABASE_URL="https://httrpszijmmegabceslr.supabase.co"
+const SUPABASE_KEY="sb_publishable_69Vl5Jd1Vyj_-4NrA7nl6Q_KQw1h1yi"
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const supabaseClient=window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+)
 
-let birdY = 200, velocity = 0, gravity = 0.22;
-let score = 0, gameRunning = false, isSoundEnabled = true, spawnTimer = 0;
-let pipes = [], coins = [], playerHighScore = 0, isNewHighScore = false, gameStartTime = 0, isGameOver = false;
-let animationId = null;
+/* =========================
+CANVAS
+========================= */
 
-// ===== UTILITY =====
-function formatWallet(w){ return w ? w.slice(0,6)+"..."+w.slice(-4) : "unknown"; }
-function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+const canvas=document.getElementById("gameCanvas")
+const ctx=canvas.getContext("2d")
 
-// ===== GAME LOOP =====
+/* =========================
+AUDIO
+========================= */
+
+const bgm=new Audio("sound.wav")
+bgm.loop=true
+bgm.volume=0.35
+
+const jumpSound=new Audio("jump.wav")
+const crashSound=new Audio("crash.wav")
+
+/* =========================
+ASSETS
+========================= */
+
+const birdImg=new Image()
+birdImg.src="logo.png"
+
+/* =========================
+GAME STATE
+========================= */
+
+let birdY=200
+let velocity=0
+let gravity=0.28
+
+let pipes=[]
+let coins=[]
+
+let score=0
+let spawnTimer=0
+
+let gameRunning=false
+let isGameOver=false
+let isStarting=false
+
+let animationId=null
+let gameStartTime=0
+
+let playerHighScore=0
+
+let lastTap=0
+
+let isSoundEnabled=true
+
+/* =========================
+HELPERS
+========================= */
+
+function formatWallet(w){
+if(!w)return "unknown"
+return w.slice(0,6)+"..."+w.slice(-4)
+}
+
+/* =========================
+GAME LOOP
+========================= */
+
 function loop(){
-    if(!gameRunning) return;
 
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0,0,320,480);
+if(!gameRunning)return
 
-    velocity += gravity;
-    birdY += velocity;
-    ctx.drawImage(birdImg,50,birdY,40,40);
+ctx.clearRect(0,0,320,480)
 
-    for(let i=pipes.length-1;i>=0;i--){
-        const p = pipes[i];
-        p.x -= 2.6;
-        ctx.fillStyle="#ff0000"; ctx.fillRect(p.x,0,45,p.y);
-        ctx.fillStyle="#00ff00"; ctx.fillRect(p.x,p.y+130,45,480);
+/* bird */
 
-        if(50+40>p.x && 50<p.x+45 && (birdY<p.y || birdY+40>p.y+130)){
-            gameOver(); return;
-        }
-        if(p.x<40 && !p.passed){ 
-            score++; p.passed=true;
-            coins.push({x:160,y:birdY,life:30});
-            document.getElementById("scoreText").innerText="Skor: "+score;
-        }
-        if(p.x<-60) pipes.splice(i,1);
-    }
+velocity+=gravity
+birdY+=velocity
 
-    for(let i=coins.length-1;i>=0;i--){
-        let c = coins[i];
-        ctx.fillStyle="#FFD700"; ctx.beginPath(); ctx.arc(c.x,c.y,6,0,Math.PI*2); ctx.fill();
-        c.y -= 1; c.life--; if(c.life<=0) coins.splice(i,1);
-    }
+ctx.drawImage(birdImg,50,birdY,40,40)
 
-    spawnTimer++;
-    if(spawnTimer>110){ pipes.push({x:320,y:Math.random()*220+40,passed:false}); spawnTimer=0; }
+/* pipes */
 
-    if(birdY>440 || birdY<0){ gameOver(); return; }
+for(let i=pipes.length-1;i>=0;i--){
 
-    animationId = requestAnimationFrame(loop);
+const p=pipes[i]
+
+let speed=2.5+(score*0.045)
+
+p.x-=speed
+
+ctx.fillStyle="#ff0000"
+ctx.fillRect(p.x,0,45,p.y)
+
+ctx.fillStyle="#00ff00"
+ctx.fillRect(p.x,p.y+130,45,480)
+
+/* collision */
+
+if(
+50+40>p.x &&
+50<p.x+45 &&
+(birdY<p.y || birdY+40>p.y+130)
+){
+gameOver()
+return
 }
 
-// ===== EVENTS =====
-let lastTap = 0;
-function jump(){
-    const now = Date.now();
-    if(now - lastTap < 120) return;
-    lastTap = now;
-    if(gameRunning){ velocity = -4.2; if(isSoundEnabled){ jumpSound.currentTime=0; jumpSound.play(); } }
+/* scoring */
+
+if(p.x<40 && !p.passed){
+
+score++
+p.passed=true
+
+spawnCoin()
+
+updateScoreUI()
+
 }
 
-// ===== GAME FUNCTIONS =====
+/* remove pipe */
+
+if(p.x<-60){
+pipes.splice(i,1)
+}
+
+}
+
+/* coins */
+
+for(let i=coins.length-1;i>=0;i--){
+
+const c=coins[i]
+
+ctx.fillStyle="#ffd700"
+
+ctx.beginPath()
+ctx.arc(c.x,c.y,6,0,Math.PI*2)
+ctx.fill()
+
+c.y-=0.6
+c.life--
+
+if(c.life<=0){
+coins.splice(i,1)
+}
+
+}
+
+/* spawn pipe */
+
+spawnTimer++
+
+if(spawnTimer>110){
+
+pipes.push({
+x:320,
+y:Math.random()*220+40,
+passed:false
+})
+
+spawnTimer=0
+
+}
+
+/* bounds */
+
+if(birdY>440||birdY<0){
+gameOver()
+return
+}
+
+animationId=requestAnimationFrame(loop)
+
+}
+
+/* =========================
+COIN SPAWN
+========================= */
+
+function spawnCoin(){
+
+coins.push({
+x:160,
+y:birdY,
+life:25
+})
+
+}
+
+/* =========================
+JUMP
+========================= */
+
+function jump(e){
+
+if(e)e.preventDefault()
+
+if(!gameRunning)return
+
+const now=Date.now()
+
+if(now-lastTap<120)return
+
+lastTap=now
+
+velocity=-5
+
+if(isSoundEnabled){
+
+jumpSound.currentTime=0
+jumpSound.play().catch(()=>{})
+
+}
+
+}
+
+/* =========================
+START GAME
+========================= */
+
 async function startGame(){
-    const walletInput = document.getElementById("walletInput");
-    let wallet = localStorage.getItem("userWallet") || walletInput.value.trim();
-if(!wallet || wallet.length < 10) { 
-    alert("Please Enter Valid Solana Wallet Address"); 
-    return; 
+
+if(isStarting)return
+isStarting=true
+
+const walletInput=document.getElementById("walletInput")
+
+let wallet=walletInput.value.trim()
+
+if(!wallet){
+wallet=localStorage.getItem("userWallet")
 }
 
-    localStorage.setItem("userWallet", wallet);
-    walletInput.value = wallet; walletInput.readOnly = true;
+if(!wallet || wallet.length<32){
 
-    if(!birdImg.complete) await new Promise(r=>birdImg.onload=r);
-    await countdown();
+alert("Invalid Solana Wallet")
 
-
-    document.getElementById("tapHint").style.display="none";
-    document.getElementById("menuOverlay").style.display="none";
-    document.querySelector(".stats").style.display="block";
-    document.getElementById("scoreText").innerText="Skor: 0";
-    document.getElementById("marqueeBox").style.display="none";
-
-    birdY=200; velocity=0; score=0; spawnTimer=0;
-    pipes=[{x:320,y:150,passed:false}]; coins=[]; gameRunning=true; isGameOver=false;
-    gameStartTime = Date.now();
-
-    // aktifkan input jump
-    window.addEventListener("mousedown", jump);
-    window.addEventListener("touchstart", jump);
-
-    if(isSoundEnabled) bgm.play().catch(()=>{});
-    loop();
+isStarting=false
+return
 }
 
-async function countdown(){
+localStorage.setItem("userWallet",wallet)
 
-    const overlay=document.getElementById("menuOverlay");
+document.getElementById("walletDisplay").innerText=wallet
 
-    const timer=document.createElement("h2");
-    timer.style.color="#00ff00";
-    timer.style.fontSize="50px";
-    overlay.appendChild(timer);
+/* UI */
 
-    for(let i=3;i>0;i--){
-        timer.innerText=i;
-        await wait(800);
-    }
+document.getElementById("menuOverlay").style.display="none"
+document.querySelector(".stats").style.display="block"
+document.getElementById("marqueeBox").style.display="none"
+document.getElementById("tapHint").style.display="none"
 
-    timer.remove();
+/* reset */
+
+birdY=200
+velocity=0
+
+score=0
+spawnTimer=0
+
+pipes=[{x:320,y:150,passed:false}]
+coins=[]
+
+updateScoreUI()
+
+gameRunning=true
+isGameOver=false
+
+gameStartTime=Date.now()
+
+window.addEventListener("mousedown",jump,{passive:false})
+window.addEventListener("touchstart",jump,{passive:false})
+
+if(isSoundEnabled){
+
+bgm.currentTime=0
+bgm.play().catch(()=>{})
 
 }
 
-// ===== GAME OVER =====
+isStarting=false
+
+loop()
+
+}
+
+/* =========================
+GAME OVER
+========================= */
+
 function gameOver(){
-    if(isGameOver) return;
-    isGameOver = true;
-    gameRunning = false;
-    if(animationId) cancelAnimationFrame(animationId);
-    bgm.pause();
-    if(isSoundEnabled) crashSound.play();
-    document.querySelector(".stats").style.display="none";
 
-    const wallet=document.getElementById("walletInput").value.trim() || "anonymous";
+if(isGameOver)return
 
-    saveScore(wallet).then(()=>{
-        document.getElementById("finalScoreText").innerText = "Score: "+score;
-        document.getElementById("finalHighScoreText").innerText = "High Score: "+playerHighScore;
-        document.getElementById("walletDisplay").innerText = wallet;
-        document.getElementById("gameOverOverlay").style.display="flex";
-    });
-if(navigator.vibrate){
-navigator.vibrate(200);
-}
-    // hapus event listener jump agar tidak mengganggu menu
-    window.removeEventListener("mousedown", jump);
-    window.removeEventListener("touchstart", jump);
+isGameOver=true
+gameRunning=false
+
+cancelAnimationFrame(animationId)
+
+bgm.pause()
+
+if(isSoundEnabled){
+crashSound.play().catch(()=>{})
 }
 
-// ===== RESTART =====
-window.restartGame = function(){
-    document.getElementById("gameOverOverlay").style.display = "none";
+const wallet=localStorage.getItem("userWallet")||"anonymous"
 
-    birdY=200; velocity=0; score=0; spawnTimer=0; pipes=[{x:320,y:150,passed:false}]; coins=[];
-    gameRunning=true; isGameOver=false; gameStartTime=Date.now();
-    document.getElementById("scoreText").innerText="Skor: 0";
-    document.querySelector(".stats").style.display="block";
-    document.getElementById("marqueeBox").style.display="none";
+saveScore(wallet).then(()=>{
 
-    window.addEventListener("mousedown", jump);
-    window.addEventListener("touchstart", jump);
+document.getElementById("finalScoreText").innerText="Score: "+score
+document.getElementById("finalHighScoreText").innerText="High Score: "+playerHighScore
 
-    if(isSoundEnabled) bgm.play().catch(()=>{});
-    loop();
-};
+document.getElementById("gameOverOverlay").style.display="flex"
 
-window.quitGame = function(){
-    // 1. Hentikan loop animasi secara paksa
-    gameRunning = false;
-    isGameOver = true;
-    if(animationId) {
-        cancelAnimationFrame(animationId);
-        animationId = null;
-    }
+loadLeaderboard()
 
-    // 2. Bersihkan event listener agar tidak terjadi double-tap atau error
-    window.removeEventListener("mousedown", jump);
-    window.removeEventListener("touchstart", jump);
+})
 
-    // 3. Reset variabel game ke kondisi awal
-    birdY = 200; 
-    velocity = 0; 
-    score = 0; 
-    spawnTimer = 0; 
-    pipes = []; 
-    coins = [];
+window.removeEventListener("mousedown",jump)
+window.removeEventListener("touchstart",jump)
 
-    // 4. Pastikan UI kembali ke kondisi Menu
-    document.getElementById("gameOverOverlay").style.display = "none";
-    document.getElementById("menuOverlay").style.display = "flex";
-    document.querySelector(".stats").style.display = "none";
-    document.getElementById("marqueeBox").style.display = "block";
-    document.getElementById("scoreText").innerText = "Skor: 0";
+}
 
-    // 5. Matikan musik
-    bgm.pause();
-    bgm.currentTime = 0; // Reset posisi musik ke awal
-};
+/* =========================
+RESTART
+========================= */
 
+window.restartGame=function(){
 
-// ===== SHARE SCORE =====
-window.shareScore = function(){
+document.getElementById("gameOverOverlay").style.display="none"
 
-    const wallet = document.getElementById("walletInput").value || "anonymous";
+startGame()
 
-   const text = `🏆 I scored ${score} in Flappy Bags!\n\nTop players share $100 USDC prize pool.\n\nCan you beat my score? 👇`;
+}
 
-    const url = "https://flappy-bags.vercel.app/"; // ganti dengan link game kamu
+/* =========================
+QUIT
+========================= */
 
-    const twitterUrl = 
-    `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+window.quitGame=function(){
 
-    window.open(twitterUrl, "_blank");
+gameRunning=false
 
-};
+cancelAnimationFrame(animationId)
 
-// ===== SAVE SCORE =====
+window.removeEventListener("mousedown",jump)
+window.removeEventListener("touchstart",jump)
+
+document.getElementById("gameOverOverlay").style.display="none"
+document.getElementById("menuOverlay").style.display="flex"
+
+document.querySelector(".stats").style.display="none"
+document.getElementById("marqueeBox").style.display="block"
+
+bgm.pause()
+bgm.currentTime=0
+
+}
+
+/* =========================
+SHARE
+========================= */
+
+window.shareScore=function(){
+
+const text=`🏆 I scored ${score} in Flappy Bags!\nCan you beat my score?`
+
+window.open(
+"https://twitter.com/intent/tweet?text="+encodeURIComponent(text)+"&url="+location.href,
+"_blank"
+)
+
+}
+
+/* =========================
+UPDATE SCORE UI
+========================= */
+
+function updateScoreUI(){
+
+const scoreText=document.getElementById("scoreText")
+
+scoreText.innerText="Skor: "+score
+
+}
+
+/* =========================
+SAVE SCORE
+========================= */
+
 async function saveScore(wallet){
-    try{
-        const playTime=(Date.now()-gameStartTime)/1000;
-        if(score>playTime*4){ console.log("Cheat blocked"); return; }
 
-        const {data:existing} = await supabaseClient.from("flappy_bags_scores").select("score").eq("wallet",wallet).maybeSingle();
-        if(!existing){
-            await supabaseClient.from("flappy_bags_scores").insert({wallet,score});
-            playerHighScore=score; isNewHighScore=true;
-        } else {
-            playerHighScore=existing.score;
-            if(score>existing.score){
-                await supabaseClient.from("flappy_bags_scores").update({score}).eq("wallet",wallet);
-                playerHighScore=score; isNewHighScore=true;
-            }
-        }
-    } catch(e){ console.log("Save error:",e); }
+try{
+
+const {data:existing}=await supabaseClient
+.from("flappy_bags_scores")
+.select("score")
+.eq("wallet",wallet)
+.maybeSingle()
+
+if(!existing){
+
+await supabaseClient
+.from("flappy_bags_scores")
+.insert({wallet,score})
+
+playerHighScore=score
+
+}else{
+
+playerHighScore=Math.max(score,existing.score)
+
+if(score>existing.score){
+
+await supabaseClient
+.from("flappy_bags_scores")
+.update({score})
+.eq("wallet",wallet)
+
 }
 
-// ===== LEADERBOARD =====
+}
+
+document.getElementById("highScoreText").innerText="High Score: "+playerHighScore
+
+}catch(e){
+console.log(e)
+}
+
+}
+
+/* =========================
+LEADERBOARD
+========================= */
 async function loadLeaderboard(){
-    const {data,error} = await supabaseClient.from("flappy_bags_scores").select("wallet,score").order("score",{ascending:false}).limit(10);
-    if(error){ console.log(error); return; }
-    const list = document.getElementById("leaderboardList"); list.innerHTML="";
-    const myWallet = localStorage.getItem("userWallet");
-    data.forEach((row,i)=>{
-        const li = document.createElement("li");
-        let medal="#"+(i+1); if(i===0) medal="🥇"; if(i===1) medal="🥈"; if(i===2) medal="🥉";
-        li.innerHTML=`<span class="rank-badge">${medal}</span>${formatWallet(row.wallet)}<span>${row.score}</span>`;
-        if(row.wallet===myWallet){ li.style.color="#00ff90"; li.style.fontWeight="bold"; }
-        list.appendChild(li);
-    });
-    loadPlayerStats();
+
+try{
+
+const {data,error}=await supabaseClient
+.from("flappy_bags_scores")
+.select("wallet,score")
+.order("score",{ascending:false})
+.limit(10)
+
+if(error){
+console.log(error)
+return
 }
+
+const liveList=document.getElementById("leaderboardList")
+const popupList=document.getElementById("popupLeaderboardList")
+
+liveList.innerHTML=""
+popupList.innerHTML=""
+
+const myWallet=localStorage.getItem("userWallet")
+
+data.forEach((row,i)=>{
+
+let medal=""
+if(i===0)medal="🥇"
+if(i===1)medal="🥈"
+if(i===2)medal="🥉"
+
+const html=`
+<span>${medal} ${i+1}. ${formatWallet(row.wallet)}</span>
+<span>${row.score}</span>
+`
+
+const li1=document.createElement("li")
+li1.innerHTML=html
+
+const li2=document.createElement("li")
+li2.innerHTML=html
+
+if(row.wallet===myWallet){
+li1.style.color="#00ff90"
+li2.style.color="#00ff90"
+}
+
+liveList.appendChild(li1)
+popupList.appendChild(li2)
+
+})
+
+loadPlayerStats()
+
+}catch(e){
+console.log(e)
+}
+
+}
+/* =========================
+PLAYER STATS
+========================= */
 
 async function loadPlayerStats(){
-    const wallet = localStorage.getItem("userWallet"); if(!wallet) return;
-    const {data} = await supabaseClient.from("flappy_bags_scores").select("wallet,score").order("score",{ascending:false});
-    if(!data) return;
-    const rank = data.findIndex(p=>p.wallet===wallet)+1;
-    const player = data.find(p=>p.wallet===wallet);
-    if(rank>0) document.getElementById("playerRank").innerText="Rank: #"+rank;
-    if(player) document.getElementById("playerScore").innerText="Best Score: "+player.score;
+
+const wallet=localStorage.getItem("userWallet")
+
+if(!wallet)return
+
+try{
+
+const {data}=await supabaseClient
+.from("flappy_bags_scores")
+.select("wallet,score")
+.order("score",{ascending:false})
+
+if(!data)return
+
+let rank="-"
+let bestScore="-"
+
+for(let i=0;i<data.length;i++){
+
+if(data[i].wallet===wallet){
+rank=i+1
+bestScore=data[i].score
+break
 }
 
-// ===== LIVE LEADERBOARD SUBSCRIBE =====
-supabaseClient.channel("leaderboard-live").on("postgres_changes",{event:"*",schema:"public",table:"flappy_bags_scores"},()=>{ loadLeaderboard(); }).subscribe();
+}
 
-// ===== SOUND TOGGLE =====
+document.getElementById("playerRank").innerText="Rank: "+(rank!=="-"?"#"+rank:"-")
+document.getElementById("playerScore").innerText="Best Score: "+bestScore
+
+}catch(e){
+console.log(e)
+}
+
+}
+
+/* =========================
+SOUND
+========================= */
+
 window.toggleSound=function(){
-    isSoundEnabled=!isSoundEnabled;
-    document.getElementById("soundBtn").innerText=isSoundEnabled?"SOUND: ON":"SOUND: OFF";
-    if(!isSoundEnabled) bgm.pause(); else if(gameRunning) bgm.play();
+
+isSoundEnabled=!isSoundEnabled
+
+const btn=document.getElementById("soundBtn")
+
+btn.innerText=isSoundEnabled?"SOUND: ON":"SOUND: OFF"
+
+}
+
+/* =========================
+REALTIME LEADERBOARD
+========================= */
+
+supabaseClient
+.channel("leaderboard-live")
+.on("postgres_changes",
+{event:"*",schema:"public",table:"flappy_bags_scores"},
+()=>{
+loadLeaderboard()
+})
+.subscribe()
+
+// Fungsi untuk memunculkan leaderboard
+window.showLeaderboard = async function(){
+
+document.getElementById("leaderboardOverlay").style.display="flex"
+
+await loadLeaderboard()
+
+const wallet=localStorage.getItem("userWallet")
+
+if(!wallet)return
+
+const {data}=await supabaseClient
+.from("flappy_bags_scores")
+.select("wallet,score")
+.order("score",{ascending:false})
+
+let rank=data.findIndex(p=>p.wallet===wallet)+1
+let score=data.find(p=>p.wallet===wallet)?.score
+
+document.getElementById("myRankDisplay").innerText=
+rank>0?"Rank: #"+rank:"Rank: Unranked"
+
+document.getElementById("myScoreDisplay").innerText=
+"Best Score: "+(score||0)
+
+}
+
+// Fungsi untuk menutup
+window.closeLeaderboard = function() {
+    document.getElementById("leaderboardOverlay").style.display = "none";
 };
+document.addEventListener("keydown",(e)=>{
+if(e.key==="Escape"){
+closeLeaderboard()
+}
+})
 
-// EXPORT GLOBAL
-window.startGame=startGame;
-window.loadLeaderboard = loadLeaderboard;
+/* =========================
+INIT
+========================= */
 
-// Load leaderboard on start
-loadLeaderboard();
+window.startGame=startGame
+window.loadLeaderboard=loadLeaderboard
 
-});
+loadLeaderboard()
+loadPlayerStats()
+
+})
+
 </script>
 
 </body>
