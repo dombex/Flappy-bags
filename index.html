@@ -29,6 +29,17 @@ body {
     color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif;
     display: flex; flex-direction: column; align-items: center; padding-bottom: 40px;
 }
+
+@keyframes pulse{
+0%{opacity:0.2;}
+50%{opacity:1;}
+100%{opacity:0.2;}
+}
+
+button:active{
+transform:scale(0.95);
+}
+
 .credits { margin-top:25px;color:#555;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;text-align:center;border-top:1px solid #222;padding-top:15px;width:100%; }
 #leaderboardList li{padding:6px;border-bottom:1px solid #222;font-size:12px;display:flex;justify-content:space-between;}
 .caution-box { width:300px;margin-top:20px;padding:16px;background: rgba(255,0,0,0.05);border:1px solid #ff0000;border-radius:10px;color:#ffcccc;font-size:13px;line-height:1.6; }
@@ -50,7 +61,17 @@ h1 { display:flex;justify-content:center;align-items:center;font-size:32px;margi
 .marquee-container { width:320px;overflow:hidden;margin:10px 0;white-space:nowrap;border:1px solid #333;padding:5px 0;color:#ffffff;font-size:11px;text-transform:uppercase;background:rgba(255,255,255,0.05);}
 .marquee-text { display:inline-block;padding-left:100%;animation:marquee 10s linear infinite; }
 @keyframes marquee {0%{transform:translate(0,0);}100%{transform:translate(-100%,0);}}
-#gameContainer { position:relative;width:320px;height:480px;border-radius:15px;overflow:hidden;border:2px solid #333;box-shadow:0 0 30px rgba(0,255,0,0.15);background:#000; }
+#gameContainer {
+position:relative;
+width:90%;
+max-width:320px;
+aspect-ratio:320/480;
+border-radius:15px;
+overflow:hidden;
+border:2px solid #333;
+box-shadow:0 0 30px rgba(0,255,0,0.15);
+background:#000;
+}
 #menuOverlay { position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:10; }
 button { padding:12px 25px;margin:10px;cursor:pointer;background:transparent;color:#00ff00;border:2px solid #00ff00;border-radius:25px;font-weight:bold;transition:0.3s;width:200px; }
 button:hover { background:#00ff00;color:#000;box-shadow:0 0 15px #00ff00; }
@@ -70,7 +91,7 @@ Flappy Bags
 </h1>
 
 <div id="marqueeBox" class="marquee-container">
-    <div class="marquee-text">✨ A simple game competition on Bagsapp ✨</div>
+    <div class="marquee-text">✨ A simple game competition on Bagsapp ✨ Beta Version with $100 usdc prizepool ✨ </div>
 </div>
 
 <div class="stats">
@@ -88,6 +109,20 @@ Flappy Bags
     </div>
     <div id="newRecordMsg" style="position:absolute;top:20%;width:100%;color:#ffff00;font-weight:bold;font-size:24px;display:none;text-shadow:0 0 10px #ff0000;z-index:5;">🏆 NEW HIGH SCORE!</div>
     <canvas id="gameCanvas" width="320" height="480"></canvas>
+</div>
+
+<div id="tapHint" style="
+position:absolute;
+bottom:80px;
+width:100%;
+text-align:center;
+color:#00ff00;
+font-size:12px;
+opacity:0.8;
+pointer-events:none;
+animation:pulse 1.2s infinite;
+">
+TAP SCREEN TO JUMP
 </div>
 
 <!-- Tambahan HTML di #gameContainer, tepat setelah <canvas> -->
@@ -132,15 +167,44 @@ Flappy Bags
 </div>
 
 <footer>
-<h4>🏆 Competition Rules</h4>
+<h4>🏆 Phase 1 Competition Rules</h4>
 <ul>
-<li><strong>Eligibility:</strong> Must hold at least 200,000 $FlappyBags Coins.</li>
-<li><strong>Rewards:</strong> Top 10 leaderboard players share 20% of royalties.</li>
-<li><strong>Liquidity:</strong> 40% of total royalties are locked for liquidity.</li>
-<li><strong>Verification:</strong> Eligibility (including the 200k $FlappyBags coin holding requirement) will be checked manually. Wallets that do not meet the criteria will be disqualified, and the prize will be passed to the next eligible player on the leaderboard.</li>
-<li><strong>Distribution:</strong> Rewards will be automatically sent to participating wallets after snapshot.</li>
+<li><strong>Eligibility:</strong> Players must hold at least <strong>200,000 $FlappyBags</strong> tokens to qualify for rewards.</li>
+
+<li><strong>Weekly Prize Pool:</strong> The <strong>Top 10 players</strong> on the leaderboard will share a total prize pool of <strong>$100 USDC</strong> during Phase 1.</li>
+
+<li><strong>Leaderboard Ranking:</strong> Rankings are determined by each player's <strong>highest recorded score</strong>. Only the best score per wallet will be counted.</li>
+
+<li><strong>Fair Play:</strong> Any form of cheating, bot usage, or score manipulation will result in <strong>disqualification</strong>.</li>
+
+<li><strong>Verification:</strong> Wallet eligibility and token holdings will be <strong>manually verified</strong> before rewards are distributed.</li>
+
+<li><strong>Reward Distribution:</strong> Rewards will be sent directly to the <strong>participating wallet addresses</strong> after the leaderboard snapshot.</li>
+
+<li><strong>Future Updates:</strong> New features, larger prize pools, and additional competitions will be introduced in upcoming phases.</li>
 </ul>
+
 <p style="text-align:center;font-style:italic;">Developer's decision is final.</p>
+
+<div class="info-container">
+<h4>⚠️ Beta Notice</h4>
+<p>
+Flappy Bags is currently in <strong>beta development</strong>. 
+While we strive to provide the best possible experience, some bugs or unexpected issues may still occur.
+</p>
+
+<p>
+If the game becomes <strong>stuck or unresponsive</strong>, please try refreshing your browser and clearing your cache.
+</p>
+
+<p>
+We are continuously working to improve gameplay, fix bugs, and introduce new features in upcoming updates.
+</p>
+
+<p style="text-align:center;font-style:italic;margin-top:8px;">
+Thank you for supporting the early stage of Flappy Bags.
+</p>
+</div>
 </footer>
 
 <div class="credits">
@@ -234,6 +298,7 @@ async function startGame(){
     if(!birdImg.complete) await new Promise(r=>birdImg.onload=r);
     await countdown();
 
+    document.getElementById("tapHint").style.display="none";
     document.getElementById("menuOverlay").style.display="none";
     document.querySelector(".stats").style.display="block";
     document.getElementById("scoreText").innerText="Skor: 0";
@@ -277,7 +342,9 @@ function gameOver(){
         document.getElementById("walletDisplay").innerText = wallet;
         document.getElementById("gameOverOverlay").style.display="flex";
     });
-
+if(navigator.vibrate){
+navigator.vibrate(200);
+}
     // hapus event listener jump agar tidak mengganggu menu
     window.removeEventListener("mousedown", jump);
     window.removeEventListener("touchstart", jump);
@@ -336,9 +403,18 @@ window.quitGame = function(){
 
 // ===== SHARE SCORE =====
 window.shareScore = function(){
-    const wallet=document.getElementById("walletInput").value || "anonymous";
-    const text = `I scored ${score} points in Flappy Bags! Wallet: ${wallet}`;
-    navigator.clipboard.writeText(text).then(()=>{ alert("Score copied! 🎉"); });
+
+    const wallet = document.getElementById("walletInput").value || "anonymous";
+
+    const text = `🚀 I just scored ${score} points in Flappy Bags!\n\nCan you beat my score?\n\nPlay here:`; 
+
+    const url = "https://flappy-bags.vercel.app/"; // ganti dengan link game kamu
+
+    const twitterUrl = 
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+
+    window.open(twitterUrl, "_blank");
+
 };
 
 // ===== SAVE SCORE =====
