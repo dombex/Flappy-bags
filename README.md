@@ -20,7 +20,7 @@
 
 ​🚀 Getting Started
 
-1.Clone the repository: git clone https://github.com/username/flappy-bags.git
+1.Clone the repository: git clone https://github.com/dombex/flappy-bags.git
 2.Deploy: Simply host the index.html file on any static hosting service like Vercel or Netlify.
 3.Configure: Ensure your SUPABASE_URL and SUPABASE_KEY are correctly updated in the script section to link your database.
 
