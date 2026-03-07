@@ -40,6 +40,23 @@ button:active{
 transform:scale(0.95);
 }
 
+.beta-notice-container {
+    width: 90%;            /* Mengikuti lebar gameContainer */
+    max-width: 320px;      /* Maksimal 320px agar tetap rapi */
+    margin: 30px auto;
+    padding: 20px;
+    box-sizing: border-box; /* Penting: agar padding tidak menambah lebar */
+    background: rgba(255, 193, 7, 0.05);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    text-align: center;
+    color: #e0e0e0;
+    font-size: 12px;
+}
+
+
+
 .credits { margin-top:25px;color:#555;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;text-align:center;border-top:1px solid #222;padding-top:15px;width:100%; }
 #leaderboardList li{padding:6px;border-bottom:1px solid #222;font-size:12px;display:flex;justify-content:space-between;}
 .caution-box { width:300px;margin-top:20px;padding:16px;background: rgba(255,0,0,0.05);border:1px solid #ff0000;border-radius:10px;color:#ffcccc;font-size:13px;line-height:1.6; }
@@ -109,9 +126,7 @@ Flappy Bags
     </div>
     <div id="newRecordMsg" style="position:absolute;top:20%;width:100%;color:#ffff00;font-weight:bold;font-size:24px;display:none;text-shadow:0 0 10px #ff0000;z-index:5;">🏆 NEW HIGH SCORE!</div>
     <canvas id="gameCanvas" width="320" height="480"></canvas>
-</div>
-
-<div id="tapHint" style="
+    <div id="tapHint" style="
 position:absolute;
 bottom:80px;
 width:100%;
@@ -123,6 +138,7 @@ pointer-events:none;
 animation:pulse 1.2s infinite;
 ">
 TAP SCREEN TO JUMP
+</div>
 </div>
 
 <!-- Tambahan HTML di #gameContainer, tepat setelah <canvas> -->
@@ -186,25 +202,22 @@ TAP SCREEN TO JUMP
 
 <p style="text-align:center;font-style:italic;">Developer's decision is final.</p>
 
-<div class="info-container">
-<h4>⚠️ Beta Notice</h4>
-<p>
-Flappy Bags is currently in <strong>beta development</strong>. 
-While we strive to provide the best possible experience, some bugs or unexpected issues may still occur.
-</p>
-
-<p>
-If the game becomes <strong>stuck or unresponsive</strong>, please try refreshing your browser and clearing your cache.
-</p>
-
-<p>
-We are continuously working to improve gameplay, fix bugs, and introduce new features in upcoming updates.
-</p>
-
-<p style="text-align:center;font-style:italic;margin-top:8px;">
-Thank you for supporting the early stage of Flappy Bags.
-</p>
+<div class="beta-notice-container">
+    <h4>
+        <span>⚠️</span> BETA <span class="beta-badge">V1.0</span>
+    </h4>
+    <p>
+        Flappy Bags is currently in <strong>active development</strong>. 
+        You may encounter minor bugs while playing.
+    </p>
+    <p style="color: #888;">
+        If the game freezes, simply <strong>refresh your page</strong> to clear the cache.
+    </p>
+    <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; font-style: italic; font-size: 10px;">
+        Thank you for being an early supporter!
+    </div>
 </div>
+
 </footer>
 
 <div class="credits">
@@ -291,12 +304,17 @@ function jump(){
 async function startGame(){
     const walletInput = document.getElementById("walletInput");
     let wallet = localStorage.getItem("userWallet") || walletInput.value.trim();
-    if(!wallet){ alert("Masukkan Wallet Address terlebih dahulu!"); return; }
+if(!wallet || wallet.length < 10) { 
+    alert("Please Enter Valid Solana Wallet Address"); 
+    return; 
+}
+
     localStorage.setItem("userWallet", wallet);
     walletInput.value = wallet; walletInput.readOnly = true;
 
     if(!birdImg.complete) await new Promise(r=>birdImg.onload=r);
     await countdown();
+
 
     document.getElementById("tapHint").style.display="none";
     document.getElementById("menuOverlay").style.display="none";
@@ -317,11 +335,21 @@ async function startGame(){
 }
 
 async function countdown(){
+
     const overlay=document.getElementById("menuOverlay");
-    overlay.querySelectorAll("*").forEach(el=>el.style.display="none");
-    const timer=document.createElement("h2"); timer.style.color="#00ff00"; timer.style.fontSize="50px"; overlay.appendChild(timer);
-    for(let i=3;i>0;i--){ timer.innerText=i; await wait(800); }
+
+    const timer=document.createElement("h2");
+    timer.style.color="#00ff00";
+    timer.style.fontSize="50px";
+    overlay.appendChild(timer);
+
+    for(let i=3;i>0;i--){
+        timer.innerText=i;
+        await wait(800);
+    }
+
     timer.remove();
+
 }
 
 // ===== GAME OVER =====
@@ -406,7 +434,7 @@ window.shareScore = function(){
 
     const wallet = document.getElementById("walletInput").value || "anonymous";
 
-    const text = `🚀 I just scored ${score} points in Flappy Bags!\n\nCan you beat my score?\n\nPlay here:`; 
+   const text = `🏆 I scored ${score} in Flappy Bags!\n\nTop players share $100 USDC prize pool.\n\nCan you beat my score? 👇`;
 
     const url = "https://flappy-bags.vercel.app/"; // ganti dengan link game kamu
 
