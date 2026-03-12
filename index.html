@@ -55,6 +55,30 @@ transform:scale(0.95);
     font-size: 12px;
 }
 
+.ads-banner {
+    width: 300px;
+    margin: 20px auto;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #333;
+    border-radius: 10px;
+    text-align: center;
+    color: #fff;
+    font-size: 13px;
+}
+
+.twitter-link {
+    color: #1DA1F2;
+    text-decoration: none;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+
 #leaderboardOverlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.9); z-index: 1000;
@@ -68,6 +92,11 @@ transform:scale(0.95);
     list-style: none; padding: 0; margin: 15px 0; max-height: 250px; overflow-y: auto;
 }
 
+#gameCanvas {
+    width: 100%;
+    height: 100%;
+    touch-action: manipulation; /* Mencegah zoom saat tap cepat */
+}
 
 
 .credits { margin-top:25px;color:#555;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;text-align:center;border-top:1px solid #222;padding-top:15px;width:100%; }
@@ -117,149 +146,349 @@ button:hover { background:#00ff00;color:#000;box-shadow:0 0 15px #00ff00; }
 .info-container { width:300px;margin-top:20px;padding:15px;background:rgba(0,255,0,0.05);border:1px solid #00ff00;border-radius:10px;text-align:center;color:#00ff00;font-size:13px; }
 footer { width:300px;margin-top:30px;padding:15px;background:#050505;border:1px solid #333;border-radius:10px;text-align:left;color:#aaa;font-size:11px; }
 h4 { color:#00ff00;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px; }
+
+@media (orientation: landscape) {
+    body::before {
+        content: "Please rotate your device to Portrait Mode to play Flappy Bags.";
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #000; color: #00ff00; z-index: 999999;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; font-weight: bold; text-align: center; padding: 20px;
+    }
+}
+
+
+/* =========================
+   PAGE SYSTEM & BOTTOM NAVBAR
+========================= */
+body {
+    padding-bottom: 80px; /* Memberi ruang agar konten bawah tidak tertutup navbar */
+}
+
+/* Container untuk Halaman */
+.app-page {
+    display: none; 
+    width: 100%;
+    max-width: 320px;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.app-page.active {
+    display: flex; /* Halaman yang aktif akan ditampilkan */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Bottom Navbar bergaya Aplikasi Mobile */
+.bottom-navbar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 320px;
+    background: rgba(5, 5, 5, 0.98);
+    border-top: 2px solid #00ff00;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 12px 0;
+    z-index: 9999;
+    backdrop-filter: blur(15px);
+    border-radius: 15px 15px 0 0;
+    box-shadow: 0 -5px 20px rgba(0, 255, 0, 0.1);
+}
+
+.nav-item {
+    color: #555;
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.nav-item.active {
+    color: #00ff00;
+    text-shadow: 0 0 10px #00ff00;
+    transform: translateY(-2px);
+}
+
+.nav-icon {
+    font-size: 20px;
+}
+
+/* Desain Halaman About */
+.about-container {
+    width: 100%;
+    background: rgba(0, 255, 0, 0.05);
+    border: 1px solid #00ff00;
+    border-radius: 15px;
+    padding: 20px;
+    box-sizing: border-box;
+    color: #e0e0e0;
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: left;
+    margin-bottom: 20px;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
+}
+
+.about-container h2 { text-align: center; color: #00ff00; margin-top: 0; font-size: 20px; }
+.about-container h3 { color: #ffd700; font-size: 13px; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 20px; }
+.about-container p { color: #bbb; margin-bottom: 10px; }
+
+
 </style>
+
+<link rel="icon" type="image/jpeg" href="logo1.jpg">
+<link rel="apple-touch-icon" href="logo1.jpg">
+
+
 </head>
 <body>
 
-<div class="dev-banner">💰 Flappy Bags — A Simple GameFi Experience</div>
-<h1>
-<img src="logo1.jpg" alt="Bagsapp Logo" class="title-logo">
-Flappy Bags
-</h1>
+    <div id="page-home" class="app-page active">
+        <div class="dev-banner">💰 Flappy Bags — A Simple GameFi Experience</div>
+        <h1>
+            <img src="logo1.jpg" alt="Bagsapp Logo" class="title-logo">
+            Flappy Bags
+        </h1>
 
-<div id="marqueeBox" class="marquee-container">
-    <div class="marquee-text">✨ A simple game competition on Bagsapp ✨ Beta Version with $100 usdc prizepool ✨ </div>
-</div>
-
-<div class="stats">
-    <p id="scoreText">Skor: 0</p>
-    <p id="highScoreText">High Score: 0</p>
-</div>
-
-<div id="gameContainer">
-    <div id="menuOverlay">
-        <h2 style="color: #00ff00;">MAIN MENU</h2>
-        <input type="text" id="walletInput" placeholder="Input your wallet address" style="padding: 10px; border-radius: 10px; margin-bottom: 10px; width: 200px;">
-        <button onclick="startGame()">START GAME</button>
-        <button onclick="showLeaderboard()">LEADERBOARD</button>
-        <button id="soundBtn" onclick="toggleSound()">SOUND: ON</button>
-    </div>
-    <div id="newRecordMsg" style="position:absolute;top:20%;width:100%;color:#ffff00;font-weight:bold;font-size:24px;display:none;text-shadow:0 0 10px #ff0000;z-index:5;">🏆 NEW HIGH SCORE!</div>
-    <canvas id="gameCanvas" width="320" height="480"></canvas>
-    <div id="tapHint" style="
-position:absolute;
-bottom:80px;
-width:100%;
-text-align:center;
-color:#00ff00;
-font-size:12px;
-opacity:0.8;
-pointer-events:none;
-animation:pulse 1.2s infinite;
-">
-TAP SCREEN TO JUMP
-</div>
-</div>
-
-<!-- Tambahan HTML di #gameContainer, tepat setelah <canvas> -->
-<div id="gameOverOverlay" style="
-    position:absolute; top:0; left:0; width:100%; height:100%;
-    background:rgba(0,0,0,0.85); color:#00ff00;
-    display:none; flex-direction:column; justify-content:center; align-items:center;
-    z-index:20; border-radius:15px;
-">
-    <h2>GAME OVER</h2>
-    <p id="finalScoreText">Score: 0</p>
-    <p id="finalHighScoreText">High Score: 0</p>
-    <button onclick="restartGame()">RESTART</button>
-    <button onclick="shareScore()">SHARE SCORE</button>
-    <button onclick="quitGame()">QUIT</button>
-    <p style="margin-top:10px; font-size:12px; color:#aaa;">Your wallet: <span id="walletDisplay">-</span></p>
-</div>
-
-<div id="liveLeaderboard">
-    <strong>LIVE LEADERBOARD:</strong>
-    <ul id="leaderboardList"></ul>
-</div>
-
-<div id="leaderboardOverlay" onclick="closeLeaderboard()">
-    <div class="lb-panel" onclick="event.stopPropagation()">
-        <h2 style="color:#00ff00;">🏆 LEADERBOARD</h2>
-        <div class="info-container" style="width:100%; box-sizing:border-box;">
-            <p id="myRankDisplay">Rank: Loading...</p>
-            <p id="myScoreDisplay">Best: -</p>
+        <div id="marqueeBox" class="marquee-container">
+            <div class="marquee-text">✨ A simple game competition on Bagsapp ✨ Beta Version with $100 usdc prizepool ✨ </div>
         </div>
-        <ul id="popupLeaderboardList" class="lb-list"></ul>
-        <button onclick="closeLeaderboard()">TUTUP</button>
+
+        <div class="stats">
+            <p id="scoreText">Skor: 0</p>
+            <p id="highScoreText">High Score: 0</p>
+        </div>
+
+        <div id="gameContainer">
+            <div id="menuOverlay">
+                <h2 style="color: #00ff00;">MAIN MENU</h2>
+                <input type="text" id="walletInput" placeholder="Input your wallet address" style="padding: 10px; border-radius: 10px; margin-bottom: 10px; width: 200px;">
+                <button onclick="startGame()">START GAME</button>
+                <button onclick="showLeaderboard()">LEADERBOARD</button>
+                <button id="soundBtn" onclick="toggleSound()">SOUND: ON</button>
+            </div>
+            <div id="newRecordMsg" style="position:absolute;top:20%;width:100%;color:#ffff00;font-weight:bold;font-size:24px;display:none;text-shadow:0 0 10px #ff0000;z-index:5;">🏆 NEW HIGH SCORE!</div>
+            <canvas id="gameCanvas" width="320" height="480"></canvas>
+            <div id="tapHint" style="position:absolute;bottom:80px;width:100%;text-align:center;color:#00ff00;font-size:12px;opacity:0.8;pointer-events:none;animation:pulse 1.2s infinite;">TAP SCREEN TO JUMP</div>
+        </div>
+
+        <div id="liveLeaderboard">
+            <strong>LIVE LEADERBOARD:</strong>
+            <ul id="leaderboardList"></ul>
+        </div>
+
+        <div class="info-container">
+            <strong>📊 PLAYER STATS</strong>
+            <p id="playerRank">Rank: -</p>
+            <p id="playerScore">Best Score: -</p>
+        </div>
+
+        <div class="caution-box">
+            <h4>⚠️ CAUTION</h4>
+            <div class="caution-row"><span>Name:</span> <span>Flappy Bags Coin</span></div>
+            <div class="caution-row"><span>Ticker:</span> <span>$FlappyBags</span></div>
+            <div class="caution-row"><span>Contract:</span> <span>BAGS</span></div>
+            <div class="warning-text">"No need connect wallet for your safety"</div>
+            <div class="warning-text">Please make sure your wallet address is correct.</div>
+        </div>
+
+        <div class="buy-container">
+            <a href="URL_BAGSAPP_DISINI" class="buy-button-small" target="_blank">BUY ON BAGSAPP</a>
+            <a href="https://jup.ag/swap/SOL-BAGS_CONTRACT_ADDRESS_DISINI" class="buy-button-small" target="_blank">BUY ON JUPITER</a>
+        </div>
+
+        <footer>
+            <h4>🏆 Phase 1 Competition Rules</h4>
+            <ul>
+                <li><strong>Eligibility:</strong> Players must hold at least <strong>200,000 $FlappyBags</strong> tokens to qualify for rewards.</li>
+                <li><strong>Weekly Prize Pool:</strong> The <strong>Top 10 players</strong> on the leaderboard will share a total prize pool of <strong>$100 USDC</strong> and 20% of royalty during Phase 1.</li>
+                <li><strong>Leaderboard Ranking:</strong> Rankings are determined by each player's <strong>highest recorded score</strong>. Only the best score per wallet will be counted.</li>
+                <li><strong>Fair Play:</strong> Any form of cheating, bot usage, or score manipulation will result in <strong>disqualification</strong>.</li>
+                <li><strong>Verification:</strong> Wallet eligibility and token holdings will be <strong>manually verified</strong> before rewards are distributed.</li>
+                <li><strong>Reward Distribution:</strong> Rewards will be sent directly to the <strong>participating wallet addresses</strong> after the leaderboard snapshot.</li>
+                <li><strong>Future Updates:</strong> New features, larger prize pools, and additional competitions will be introduced in upcoming phases.</li>
+            </ul>
+            <p style="text-align:center;font-style:italic;">Developer's decision is final.</p>
+
+            <div class="beta-notice-container">
+                <h4><span>⚠️</span> BETA <span class="beta-badge">V1.0</span></h4>
+                <p>Flappy Bags is currently in <strong>active development</strong>. You may encounter minor bugs while playing.</p>
+                <p style="color: #888;">If the game freezes, simply <strong>refresh your page</strong> to clear the cache.</p>
+                <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; font-style: italic; font-size: 10px;">
+                    Thank you for being an early supporter!
+                </div>
+            </div>
+        </footer>
+
+        <div class="ads-banner">
+            <span> 📢 ADs and Partner Welcome</span>
+            <a href="https://x.com/Aureliaseptia17" class="twitter-link" target="_blank">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>       
+            </a>
+        </div>
+
+        <div class="credits" style="margin-bottom: 40px;">
+            <p>Built with ❤️ by <strong>Flappy Bags</strong> | © 2026</p>
+            <p><small>Powered by BagsApp</small></p>
+        </div>
+    </div>
+
+
+    <div id="page-about" class="app-page">
+        <div class="dev-banner">📖 Official Litepaper</div>
+        
+        <div style="margin-top: 20px;"></div>
+
+        <div class="about-container">
+            <h2>🎮 Flappy Bags</h2>
+            <p style="text-align: center; color: #00ff00; font-style: italic; font-weight: bold; margin-bottom: 20px;">
+                A Simple Competitive Game Platform Integrated with BagsApp
+        </p>
+
+        <h3>1. Introduction</h3>
+        <p>Flappy Bags is a simple competitive gaming initiative developed as part of the BagsApp ecosystem. The project aims to introduce an alternative way for users to participate in the ecosystem beyond traditional trading activities. While trading remains an important aspect of many crypto platforms, not every user has the knowledge or experience required to trade effectively. However, many users still wish to participate in the ecosystem and engage with digital assets in meaningful ways.</p>
+        <p>Flappy Bags introduces a simple game-based competition model that allows users to participate in competitive activities while having the opportunity to earn rewards. By combining entertainment with competition, the platform creates a new engagement layer that connects users, token ecosystems, and community participation.</p>
+
+        <h3>2. Project Vision</h3>
+        <p>The vision of Flappy Bags is to build an inclusive and accessible gaming competition platform that integrates with the BagsApp ecosystem while encouraging community participation and engagement.</p>
+        <p>Through simple and enjoyable gameplay, the platform aims to create a space where users from different backgrounds can participate in competitions, interact with various crypto projects, and benefit from the rewards provided through the ecosystem.</p>
+
+        <h3>3. Project Mission</h3>
+        <p>The mission of Flappy Bags is to increase participation within the BagsApp ecosystem by providing simple and engaging gaming experiences. The platform seeks to create opportunities for users to earn rewards without relying solely on trading skills while encouraging long-term ecosystem stability.</p>
+        <p>Flappy Bags also aims to provide a collaborative environment where crypto projects, investors, and communities can contribute reward pools to support competitions. By doing so, the platform strengthens the connection between players and participating projects while expanding exposure for different token ecosystems.</p>
+
+        <h3>4. Platform Concept</h3>
+        <p>Flappy Bags is designed as the first game within a larger gaming platform currently under development. While Flappy Bags serves as the initial entry point, the long-term goal is to build a dedicated gaming platform integrated with BagsApp that offers multiple simple games.</p>
+        <p>This platform will allow users to choose from various game options, participate in competitions, and compete for rewards. Each game will feature a leaderboard system that tracks player scores and ranks participants based on performance. At the end of each competition period, players with the highest scores will receive rewards from the prize pool associated with that competition.</p>
+
+        <h3>5. Competition Model</h3>
+        <p>The competition system is designed to remain simple, fair, and accessible to all users. Players participate by playing games and attempting to achieve the highest possible scores. Scores are then recorded and displayed on a leaderboard that ranks players according to their performance.</p>
+        <p>Competitions may occur in several formats, including daily competitions, weekly tournaments, and special event competitions hosted by the platform or by partner projects. This structure ensures that competitions remain dynamic and continuously provide new opportunities for players to participate and earn rewards.</p>
+
+        <h3>6. Token Launch</h3>
+        <p>The Flappy Bags token was launched through the BagsApp platform using a fair launch mechanism. The fair launch model was chosen to ensure equal access for all participants without any reserved allocations for the development team or early investors.</p>
+        <p>This transparent distribution method helps build trust within the community while allowing users to participate in the ecosystem on equal terms from the beginning.</p>
+
+        <h3>7. Token Utility</h3>
+        <p>Tokens within the Flappy Bags ecosystem serve several important roles within the platform. They may be used as part of the reward system for competitions, as participation requirements for certain events, or as contributions toward prize pools.</p>
+        <p>In some competitions, participants may be required to hold tokens from the project that provides the reward pool. This mechanism ensures that players actively support the ecosystem of the sponsoring project while participating in competitions. By introducing token holding requirements, the platform also encourages more stable token activity and reduces purely speculative behavior.</p>
+
+        <h3>8. Reward System</h3>
+        <p>Rewards distributed through the platform originate from prize pools provided by multiple contributors. These contributors may include crypto projects, investors, communities, or sponsors that wish to participate in competitions.</p>
+        <p>Rewards may take several forms, including project tokens, stablecoins, or other digital assets. This reward model creates mutual benefits. Players gain the opportunity to earn rewards through gameplay, while sponsoring projects gain visibility and increased community engagement.</p>
+
+        <h3>9. Game Economy Model</h3>
+        <p>The Flappy Bags ecosystem is designed with a balanced economic structure. Prize pools for competitions are supported by participating projects or sponsors rather than relying solely on internal token emissions.</p>
+        <p>Some competitions may require participants to hold tokens associated with the sponsoring project, ensuring that reward distribution supports ecosystem growth. This approach helps create a sustainable economic environment while maintaining active participation from both players and projects.</p>
+
+        <h3>10. Opportunities for Projects and Investors</h3>
+        <p>Flappy Bags opens opportunities for crypto projects, investors, and communities to participate in the ecosystem by sponsoring competitions or contributing prize pools. Projects that provide rewards may require players to hold their tokens in order to participate in the competition.</p>
+        <p>This mechanism creates direct interaction between players and the sponsoring project's ecosystem. For investors and project teams, Flappy Bags offers an innovative promotional channel that combines gaming engagement with token exposure.</p>
+
+        <h3>11. Development Roadmap</h3>
+        <p>The development of the Flappy Bags ecosystem will take place in several stages to ensure stability and sustainable growth. The first stage focuses on launching the Flappy Bags game as the initial entry point to the ecosystem.</p>
+        <p>The second stage will introduce an integrated gaming platform connected with BagsApp where additional simple games will be available. Future stages will include improvements to leaderboard systems, automated reward distribution, and collaboration with multiple crypto projects to support larger competitions. As the platform evolves, new game variations and additional features will be introduced to maintain long-term community engagement.</p>
+
+        <h3>12. Long-Term Platform Vision</h3>
+        <p>While Flappy Bags represents the initial game within the ecosystem, the long-term objective is to develop a multi-game platform that integrates simple competitive games with token-based reward systems.</p>
+        <p>This platform aims to become a community-driven competition environment where players, crypto projects, and investors can interact in a transparent and engaging ecosystem. By combining gaming entertainment with token utility and community participation, Flappy Bags aims to contribute to a more dynamic and inclusive Web3 environment within the BagsApp ecosystem.</p>
+
+        <h3>13. Conclusion</h3>
+        <p>Flappy Bags represents the first step toward building a simple yet engaging competitive gaming ecosystem integrated with BagsApp. Through accessible gameplay, community competitions, and collaborative reward systems, the platform seeks to expand participation within the ecosystem while creating new opportunities for both players and crypto projects.</p>
+        <p>As development continues, Flappy Bags will evolve from a single game into a broader gaming platform designed to support multiple games, competitive events, and community-driven interactions.</p>
     </div>
 </div>
 
-
-<div class="info-container">
-<strong>📊 PLAYER STATS</strong>
-<p id="playerRank">Rank: -</p>
-<p id="playerScore">Best Score: -</p>
-</div>
-
-<div class="caution-box">
-<h4>⚠️ CAUTION</h4>
-<div class="caution-row"><span>Name:</span> <span>Flappy Bags Coin</span></div>
-<div class="caution-row"><span>Ticker:</span> <span>$FlappyBags</span></div>
-<div class="caution-row"><span>Contract:</span> <span>BAGS</span></div>
-<div class="warning-text">"No need connect wallet for your safety"</div>
-<div class="warning-text">Please make sure your wallet address is correct.</div>
-</div>
-
-<div class="buy-container">
-<a href="URL_BAGSAPP_DISINI" class="buy-button-small" target="_blank">BUY ON BAGSAPP</a>
-<a href="https://jup.ag/swap/SOL-BAGS_CONTRACT_ADDRESS_DISINI" class="buy-button-small" target="_blank">BUY ON JUPITER</a>
-</div>
-
-<footer>
-<h4>🏆 Phase 1 Competition Rules</h4>
-<ul>
-<li><strong>Eligibility:</strong> Players must hold at least <strong>200,000 $FlappyBags</strong> tokens to qualify for rewards.</li>
-
-<li><strong>Weekly Prize Pool:</strong> The <strong>Top 10 players</strong> on the leaderboard will share a total prize pool of <strong>$100 USDC</strong> during Phase 1.</li>
-
-<li><strong>Leaderboard Ranking:</strong> Rankings are determined by each player's <strong>highest recorded score</strong>. Only the best score per wallet will be counted.</li>
-
-<li><strong>Fair Play:</strong> Any form of cheating, bot usage, or score manipulation will result in <strong>disqualification</strong>.</li>
-
-<li><strong>Verification:</strong> Wallet eligibility and token holdings will be <strong>manually verified</strong> before rewards are distributed.</li>
-
-<li><strong>Reward Distribution:</strong> Rewards will be sent directly to the <strong>participating wallet addresses</strong> after the leaderboard snapshot.</li>
-
-<li><strong>Future Updates:</strong> New features, larger prize pools, and additional competitions will be introduced in upcoming phases.</li>
-</ul>
-
-<p style="text-align:center;font-style:italic;">Developer's decision is final.</p>
-
-<div class="beta-notice-container">
-    <h4>
-        <span>⚠️</span> BETA <span class="beta-badge">V1.0</span>
-    </h4>
-    <p>
-        Flappy Bags is currently in <strong>active development</strong>. 
-        You may encounter minor bugs while playing.
-    </p>
-    <p style="color: #888;">
-        If the game freezes, simply <strong>refresh your page</strong> to clear the cache.
-    </p>
-    <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; font-style: italic; font-size: 10px;">
-        Thank you for being an early supporter!
+    <div id="gameOverOverlay" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); color:#00ff00; display:none; flex-direction:column; justify-content:center; align-items:center; z-index:20; border-radius:15px;">
+        <h2>GAME OVER</h2>
+        <p id="finalScoreText">Score: 0</p>
+        <p id="finalHighScoreText">High Score: 0</p>
+        <button onclick="restartGame()">RESTART</button>
+        <button onclick="shareScore()">SHARE SCORE</button>
+        <button onclick="quitGame()">QUIT</button>
+        <p style="margin-top:10px; font-size:12px; color:#aaa;">Your wallet: <span id="walletDisplay">-</span></p>
     </div>
-</div>
 
-</footer>
+    <div id="leaderboardOverlay" onclick="closeLeaderboard()">
+        <div class="lb-panel" onclick="event.stopPropagation()">
+            <h2 style="color:#00ff00;">🏆 LEADERBOARD</h2>
+            <div class="info-container" style="width:100%; box-sizing:border-box;">
+                <p id="myRankDisplay">Rank: Loading...</p>
+                <p id="myScoreDisplay">Best: -</p>
+            </div>
+            <ul id="popupLeaderboardList" class="lb-list"></ul>
+            <button onclick="closeLeaderboard()">TUTUP</button>
+        </div>
+    </div>
 
-<div class="credits">
-<p>Built with ❤️ by <strong>Flappy Bags</strong> | © 2026</p>
-<p><small>Powered by BagsApp</small></p>
-</div>
+
+    <nav class="bottom-navbar">
+        <div class="nav-item active" id="nav-home" onclick="switchPage('page-home')">
+            <span class="nav-icon">🎮</span>
+            <span>Home</span>
+        </div>
+        <div class="nav-item" id="nav-about" onclick="switchPage('page-about')">
+            <span class="nav-icon">📖</span>
+            <span>About</span>
+        </div>
+    </nav>
+
 
 <script>
+
+/* =========================
+   PAGE NAVIGATION LOGIC
+========================= */
+window.switchPage = function(pageId) {
+    // 1. Sembunyikan semua halaman
+    document.querySelectorAll('.app-page').forEach(page => {
+        page.classList.remove('active');
+    });
+    
+    // 2. Tampilkan halaman yang dituju
+    document.getElementById(pageId).classList.add('active');
+    
+    // 3. Ubah warna status Navbar di bawah
+    document.querySelectorAll('.nav-item').forEach(nav => {
+        nav.classList.remove('active');
+    });
+    
+    if(pageId === 'page-home') {
+        document.getElementById('nav-home').classList.add('active');
+    } else if(pageId === 'page-about') {
+        document.getElementById('nav-about').classList.add('active');
+    }
+    
+    // 4. Reset scroll ke bagian atas layar saat pindah halaman
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
 document.addEventListener("DOMContentLoaded",()=>{
+
+// Auto-fill wallet jika sudah pernah main
+const savedWallet = localStorage.getItem("userWallet");
+if (savedWallet) {
+    document.getElementById("walletInput").value = savedWallet;
+    loadPlayerStats(); // Langsung muat statistik mereka
+}
+
 
 /* =========================
 SUPABASE
@@ -325,6 +554,9 @@ let lastTap=0
 
 let isSoundEnabled=true
 
+let gameStartTimestamp = 0; // Untuk mencatat kapan game benar-benar dimulai
+
+
 /* =========================
 HELPERS
 ========================= */
@@ -333,6 +565,29 @@ function formatWallet(w){
 if(!w)return "unknown"
 return w.slice(0,6)+"..."+w.slice(-4)
 }
+
+/* =========================
+   NAVBAR & MODAL LOGIC
+========================= */
+window.showAbout = function() {
+    // Tutup leaderboard jika sedang terbuka
+    document.getElementById("leaderboardOverlay").style.display = "none";
+    // Buka about
+    document.getElementById("aboutOverlay").style.display = "flex";
+}
+
+window.closeAllModals = function() {
+    // Menutup semua pop-up modal
+    document.getElementById("leaderboardOverlay").style.display = "none";
+    document.getElementById("aboutOverlay").style.display = "none";
+}
+
+// Update fungsi Escape key agar menutup semua modal
+document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape"){
+        closeAllModals();
+    }
+});
 
 /* =========================
 GAME LOOP
@@ -492,6 +747,10 @@ jumpSound.play().catch(()=>{})
 START GAME
 ========================= */
 
+/* =========================
+START GAME
+========================= */
+
 async function startGame(){
 
 if(isStarting)return
@@ -516,6 +775,10 @@ return
 localStorage.setItem("userWallet",wallet)
 
 document.getElementById("walletDisplay").innerText=wallet
+document.querySelector('.bottom-navbar').style.display = "none";
+
+// 👇 INI TAMBAHANNYA AGAR STAT LANGSUNG MUNCUL 👇
+loadPlayerStats();
 
 /* UI */
 
@@ -523,7 +786,6 @@ document.getElementById("menuOverlay").style.display="none"
 document.querySelector(".stats").style.display="block"
 document.getElementById("marqueeBox").style.display="none"
 document.getElementById("tapHint").style.display="none"
-
 /* reset */
 
 birdY=200
@@ -625,6 +887,7 @@ document.getElementById("menuOverlay").style.display="flex"
 
 document.querySelector(".stats").style.display="none"
 document.getElementById("marqueeBox").style.display="block"
+document.querySelector('.bottom-navbar').style.display = "flex";
 
 bgm.pause()
 bgm.currentTime=0
@@ -659,49 +922,53 @@ scoreText.innerText="Skor: "+score
 }
 
 /* =========================
-SAVE SCORE
+SAVE SCORE WITH ANTI-CHEAT
 ========================= */
+async function saveScore(wallet) {
+    try {
+        // 1. Anti-Cheat: Cek apakah skor masuk akal dibanding durasi main
+        const playDuration = (Date.now() - gameStartTime) / 1000;
+        const maxPossibleScore = playDuration * 1.5; // Max 1.5 poin per detik
 
-async function saveScore(wallet){
+        if (score > 10 && score > maxPossibleScore) {
+            console.error("Skor tidak valid berdasarkan durasi bermain!");
+            return; 
+        }
 
-try{
+        // 2. Ambil skor lama dari database
+        const { data: currentData } = await supabaseClient
+            .from("flappy_bags_scores")
+            .select("score")
+            .eq("wallet", wallet)
+            .maybeSingle();
 
-const {data:existing}=await supabaseClient
-.from("flappy_bags_scores")
-.select("score")
-.eq("wallet",wallet)
-.maybeSingle()
+        const oldScore = currentData ? currentData.score : 0;
+        playerHighScore = Math.max(score, oldScore);
 
-if(!existing){
+        // 3. Update database jika ada skor baru yang lebih tinggi
+        if (!currentData || score > oldScore) {
+            await supabaseClient
+                .from("flappy_bags_scores")
+                .upsert({ 
+                    wallet: wallet, 
+                    score: playerHighScore,
+                    updated_at: new Date()
+                }, { onConflict: 'wallet' });
+            
+            const msg = document.getElementById("newRecordMsg");
+            if (msg) {
+                msg.style.display = "block";
+                setTimeout(() => msg.style.display = "none", 2000);
+            }
+        }
 
-await supabaseClient
-.from("flappy_bags_scores")
-.insert({wallet,score})
+        document.getElementById("highScoreText").innerText = "High Score: " + playerHighScore;
 
-playerHighScore=score
-
-}else{
-
-playerHighScore=Math.max(score,existing.score)
-
-if(score>existing.score){
-
-await supabaseClient
-.from("flappy_bags_scores")
-.update({score})
-.eq("wallet",wallet)
-
+    } catch (e) {
+        console.error("Error saving score:", e);
+    }
 }
 
-}
-
-document.getElementById("highScoreText").innerText="High Score: "+playerHighScore
-
-}catch(e){
-console.log(e)
-}
-
-}
 
 /* =========================
 LEADERBOARD
