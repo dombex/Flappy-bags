@@ -8,18 +8,18 @@
 <style>
 body {
     width: 100%;
-    overflow-x: hidden; 
+    overflow-x: hidden; /* Mencegah geser kiri-kanan */
 }
 
 #gameContainer {
-    width: 90%;      
-    max-width: 320px; 
-    height: auto;     
-    aspect-ratio: 320 / 480; 
+    width: 90%;      /* Ubah dari 320px menjadi 90% lebar layar */
+    max-width: 320px; /* Tapi tetap maksimal 320px */
+    height: auto;     /* Biarkan tinggi menyesuaikan */
+    aspect-ratio: 320 / 480; /* Menjaga proporsi game */
 }
 
 #gameCanvas {
-    width: 100%;     
+    width: 100%;     /* Canvas akan mengisi lebar container */
     height: 100%;
 }
 
@@ -41,11 +41,11 @@ transform:scale(0.95);
 }
 
 .beta-notice-container {
-    width: 90%;            
-    max-width: 320px;      
+    width: 90%;            /* Mengikuti lebar gameContainer */
+    max-width: 320px;      /* Maksimal 320px agar tetap rapi */
     margin: 30px auto;
     padding: 20px;
-    box-sizing: border-box; 
+    box-sizing: border-box; /* Penting: agar padding tidak menambah lebar */
     background: rgba(255, 193, 7, 0.05);
     border: 1px solid rgba(255, 193, 7, 0.3);
     border-radius: 16px;
@@ -95,7 +95,7 @@ transform:scale(0.95);
 #gameCanvas {
     width: 100%;
     height: 100%;
-    touch-action: manipulation; 
+    touch-action: manipulation; /* Mencegah zoom saat tap cepat */
 }
 
 
@@ -162,9 +162,10 @@ h4 { color:#00ff00;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px
    PAGE SYSTEM & BOTTOM NAVBAR
 ========================= */
 body {
-    padding-bottom: 80px; 
+    padding-bottom: 80px; /* Memberi ruang agar konten bawah tidak tertutup navbar */
 }
 
+/* Container untuk Halaman */
 .app-page {
     display: none; 
     width: 100%;
@@ -175,7 +176,7 @@ body {
 }
 
 .app-page.active {
-    display: flex; 
+    display: flex; /* Halaman yang aktif akan ditampilkan */
 }
 
 @keyframes fadeIn {
@@ -183,6 +184,7 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Bottom Navbar bergaya Aplikasi Mobile */
 .bottom-navbar {
     position: fixed;
     bottom: 0;
@@ -226,6 +228,7 @@ body {
     font-size: 20px;
 }
 
+/* Desain Halaman About */
 .about-container {
     width: 100%;
     background: rgba(0, 255, 0, 0.05);
@@ -256,7 +259,11 @@ body {
 <body>
 
     <div id="page-home" class="app-page active">
-        <div class="dev-banner">💰 Flappy Bags — A Simple GameFi Experience</div>
+        <div class="dev-banner">
+            <img src="logo.png" alt="" style="height: 12px; vertical-align: middle; margin-right: 3px;">
+            Flappy Bags — A Simple GameFi Experience
+        </div>
+        
         <h1>
             <img src="logo1.jpg" alt="Bagsapp Logo" class="title-logo">
             Flappy Bags
@@ -354,7 +361,10 @@ body {
         <div style="margin-top: 20px;"></div>
 
         <div class="about-container">
-            <h2>🎮 Flappy Bags</h2>
+            <h2>
+                <img src="logo1.jpg" alt="" style="height: 20px; vertical-align: middle; margin-right: 5px; border-radius: 4px;">
+                Flappy Bags
+            </h2>
             <p style="text-align: center; color: #00ff00; font-style: italic; font-weight: bold; margin-bottom: 20px;">
                 A Simple Competitive Game Platform Integrated with BagsApp
         </p>
@@ -410,6 +420,7 @@ body {
         <h3>13. Conclusion</h3>
         <p>Flappy Bags represents the first step toward building a simple yet engaging competitive gaming ecosystem integrated with BagsApp. Through accessible gameplay, community competitions, and collaborative reward systems, the platform seeks to expand participation within the ecosystem while creating new opportunities for both players and crypto projects.</p>
         <p>As development continues, Flappy Bags will evolve from a single game into a broader gaming platform designed to support multiple games, competitive events, and community-driven interactions.</p>
+        <p style="text-align: center; font-size: 10px; color: #555; margin-top: 30px;">© Flappy Bags 2026</p>
     </div>
 </div>
 
@@ -454,12 +465,15 @@ body {
    PAGE NAVIGATION LOGIC
 ========================= */
 window.switchPage = function(pageId) {
+    // 1. Sembunyikan semua halaman
     document.querySelectorAll('.app-page').forEach(page => {
         page.classList.remove('active');
     });
     
+    // 2. Tampilkan halaman yang dituju
     document.getElementById(pageId).classList.add('active');
     
+    // 3. Ubah warna status Navbar di bawah
     document.querySelectorAll('.nav-item').forEach(nav => {
         nav.classList.remove('active');
     });
@@ -470,24 +484,11 @@ window.switchPage = function(pageId) {
         document.getElementById('nav-about').classList.add('active');
     }
     
+    // 4. Reset scroll ke bagian atas layar saat pindah halaman
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 document.addEventListener("DOMContentLoaded",()=>{
-
-
-/* =========================
-SUPABASE
-========================= */
-
-const SUPABASE_URL = "https://umxtbbhhzsuxvaddlaal.supabase.co";
-const SUPABASE_KEY = "sb_publishable_QoF8P1ydQJegF6RSlREmAQ_nyJ2OlSk";
-
-const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-)
-
 
 // Auto-fill wallet jika sudah pernah main
 const savedWallet = localStorage.getItem("userWallet");
@@ -495,6 +496,20 @@ if (savedWallet) {
     document.getElementById("walletInput").value = savedWallet;
     loadPlayerStats(); // Langsung muat statistik mereka
 }
+
+
+/* =========================
+SUPABASE
+========================= */
+
+// EDIT DI SINI DENGAN PROJECT URL & API KEY BARU KAMU
+const SUPABASE_URL = "https://umxtbbhhzsuxvaddlaal.supabase.co"
+const SUPABASE_KEY = "sb_publishable_QoF8P1ydQJegF6RSlREmAQ_nyJ2OlSk"
+
+const supabaseClient=window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+)
 
 /* =========================
 CANVAS
@@ -548,7 +563,7 @@ let lastTap=0
 
 let isSoundEnabled=true
 
-let gameStartTimestamp = 0; 
+let gameStartTimestamp = 0; // Untuk mencatat kapan game benar-benar dimulai
 
 
 /* =========================
@@ -564,15 +579,19 @@ return w.slice(0,6)+"..."+w.slice(-4)
    NAVBAR & MODAL LOGIC
 ========================= */
 window.showAbout = function() {
+    // Tutup leaderboard jika sedang terbuka
     document.getElementById("leaderboardOverlay").style.display = "none";
+    // Buka about
     document.getElementById("aboutOverlay").style.display = "flex";
 }
 
 window.closeAllModals = function() {
+    // Menutup semua pop-up modal
     document.getElementById("leaderboardOverlay").style.display = "none";
     document.getElementById("aboutOverlay").style.display = "none";
 }
 
+// Update fungsi Escape key agar menutup semua modal
 document.addEventListener("keydown", (e) => {
     if(e.key === "Escape"){
         closeAllModals();
@@ -761,11 +780,8 @@ return
 localStorage.setItem("userWallet",wallet)
 
 document.getElementById("walletDisplay").innerText=wallet
+document.querySelector('.bottom-navbar').style.display = "none";
 
-let bottomNav = document.querySelector('.bottom-navbar');
-if(bottomNav) bottomNav.style.display = "none";
-
-loadPlayerStats(); 
 
 /* UI */
 
@@ -875,9 +891,7 @@ document.getElementById("menuOverlay").style.display="flex"
 
 document.querySelector(".stats").style.display="none"
 document.getElementById("marqueeBox").style.display="block"
-
-let bottomNav = document.querySelector('.bottom-navbar');
-if(bottomNav) bottomNav.style.display = "flex";
+document.querySelector('.bottom-navbar').style.display = "flex";
 
 bgm.pause()
 bgm.currentTime=0
@@ -916,14 +930,16 @@ SAVE SCORE WITH ANTI-CHEAT
 ========================= */
 async function saveScore(wallet) {
     try {
+        // 1. Anti-Cheat: Cek apakah skor masuk akal dibanding durasi main
         const playDuration = (Date.now() - gameStartTime) / 1000;
-        const maxPossibleScore = playDuration * 1.5; 
+        const maxPossibleScore = playDuration * 1.5; // Max 1.5 poin per detik
 
         if (score > 10 && score > maxPossibleScore) {
             console.error("Skor tidak valid berdasarkan durasi bermain!");
             return; 
         }
 
+        // 2. Ambil skor lama dari database
         const { data: currentData } = await supabaseClient
             .from("flappy_bags_scores")
             .select("score")
@@ -933,6 +949,7 @@ async function saveScore(wallet) {
         const oldScore = currentData ? currentData.score : 0;
         playerHighScore = Math.max(score, oldScore);
 
+        // 3. Update database jika ada skor baru yang lebih tinggi
         if (!currentData || score > oldScore) {
             await supabaseClient
                 .from("flappy_bags_scores")
@@ -1023,43 +1040,40 @@ PLAYER STATS
 ========================= */
 
 async function loadPlayerStats(){
-    const wallet=localStorage.getItem("userWallet")
-    if(!wallet)return
 
-    try{
-        const {data}=await supabaseClient
-        .from("flappy_bags_scores")
-        .select("wallet,score")
-        .order("score",{ascending:false})
+const wallet=localStorage.getItem("userWallet")
 
-        if(!data)return
+if(!wallet)return
 
-        let rank="-"
-        let bestScore=0
-        let hasPlayed=false
+try{
 
-        for(let i=0;i<data.length;i++){
-            if(data[i].wallet===wallet){
-                rank=i+1
-                bestScore=parseInt(data[i].score) || 0
-                hasPlayed=true
-                break
-            }
-        }
+const {data}=await supabaseClient
+.from("flappy_bags_scores")
+.select("wallet,score")
+.order("score",{ascending:false})
 
-        playerHighScore = bestScore
+if(!data)return
 
-        let rDisplay = document.getElementById("playerRank")
-        let sDisplay = document.getElementById("playerScore")
-        let hDisplay = document.getElementById("highScoreText")
+let rank="-"
+let bestScore="-"
 
-        if(rDisplay) rDisplay.innerText="Rank: "+(rank!=="-"?"#"+rank:"-")
-        if(sDisplay) sDisplay.innerText="Best Score: "+(hasPlayed?bestScore:"-")
-        if(hDisplay) hDisplay.innerText="High Score: "+bestScore
+for(let i=0;i<data.length;i++){
 
-    }catch(e){
-        console.log(e)
-    }
+if(data[i].wallet===wallet){
+rank=i+1
+bestScore=data[i].score
+break
+}
+
+}
+
+document.getElementById("playerRank").innerText="Rank: "+(rank!=="-"?"#"+rank:"-")
+document.getElementById("playerScore").innerText="Best Score: "+bestScore
+
+}catch(e){
+console.log(e)
+}
+
 }
 
 /* =========================
@@ -1120,6 +1134,11 @@ document.getElementById("myScoreDisplay").innerText=
 window.closeLeaderboard = function() {
     document.getElementById("leaderboardOverlay").style.display = "none";
 };
+document.addEventListener("keydown",(e)=>{
+if(e.key==="Escape"){
+closeLeaderboard()
+}
+})
 
 /* =========================
 INIT
