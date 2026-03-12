@@ -8,18 +8,18 @@
 <style>
 body {
     width: 100%;
-    overflow-x: hidden; /* Mencegah geser kiri-kanan */
+    overflow-x: hidden; 
 }
 
 #gameContainer {
-    width: 90%;      /* Ubah dari 320px menjadi 90% lebar layar */
-    max-width: 320px; /* Tapi tetap maksimal 320px */
-    height: auto;     /* Biarkan tinggi menyesuaikan */
-    aspect-ratio: 320 / 480; /* Menjaga proporsi game */
+    width: 90%;      
+    max-width: 320px; 
+    height: auto;     
+    aspect-ratio: 320 / 480; 
 }
 
 #gameCanvas {
-    width: 100%;     /* Canvas akan mengisi lebar container */
+    width: 100%;     
     height: 100%;
 }
 
@@ -41,11 +41,11 @@ transform:scale(0.95);
 }
 
 .beta-notice-container {
-    width: 90%;            /* Mengikuti lebar gameContainer */
-    max-width: 320px;      /* Maksimal 320px agar tetap rapi */
+    width: 90%;            
+    max-width: 320px;      
     margin: 30px auto;
     padding: 20px;
-    box-sizing: border-box; /* Penting: agar padding tidak menambah lebar */
+    box-sizing: border-box; 
     background: rgba(255, 193, 7, 0.05);
     border: 1px solid rgba(255, 193, 7, 0.3);
     border-radius: 16px;
@@ -95,7 +95,7 @@ transform:scale(0.95);
 #gameCanvas {
     width: 100%;
     height: 100%;
-    touch-action: manipulation; /* Mencegah zoom saat tap cepat */
+    touch-action: manipulation; 
 }
 
 
@@ -162,10 +162,9 @@ h4 { color:#00ff00;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px
    PAGE SYSTEM & BOTTOM NAVBAR
 ========================= */
 body {
-    padding-bottom: 80px; /* Memberi ruang agar konten bawah tidak tertutup navbar */
+    padding-bottom: 80px; 
 }
 
-/* Container untuk Halaman */
 .app-page {
     display: none; 
     width: 100%;
@@ -176,7 +175,7 @@ body {
 }
 
 .app-page.active {
-    display: flex; /* Halaman yang aktif akan ditampilkan */
+    display: flex; 
 }
 
 @keyframes fadeIn {
@@ -184,7 +183,6 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Bottom Navbar bergaya Aplikasi Mobile */
 .bottom-navbar {
     position: fixed;
     bottom: 0;
@@ -228,7 +226,6 @@ body {
     font-size: 20px;
 }
 
-/* Desain Halaman About */
 .about-container {
     width: 100%;
     background: rgba(0, 255, 0, 0.05);
@@ -457,15 +454,12 @@ body {
    PAGE NAVIGATION LOGIC
 ========================= */
 window.switchPage = function(pageId) {
-    // 1. Sembunyikan semua halaman
     document.querySelectorAll('.app-page').forEach(page => {
         page.classList.remove('active');
     });
     
-    // 2. Tampilkan halaman yang dituju
     document.getElementById(pageId).classList.add('active');
     
-    // 3. Ubah warna status Navbar di bawah
     document.querySelectorAll('.nav-item').forEach(nav => {
         nav.classList.remove('active');
     });
@@ -476,11 +470,24 @@ window.switchPage = function(pageId) {
         document.getElementById('nav-about').classList.add('active');
     }
     
-    // 4. Reset scroll ke bagian atas layar saat pindah halaman
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 document.addEventListener("DOMContentLoaded",()=>{
+
+
+/* =========================
+SUPABASE
+========================= */
+
+const SUPABASE_URL = "https://umxtbbhhzsuxvaddlaal.supabase.co";
+const SUPABASE_KEY = "sb_publishable_QoF8P1ydQJegF6RSlREmAQ_nyJ2OlSk";
+
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+)
+
 
 // Auto-fill wallet jika sudah pernah main
 const savedWallet = localStorage.getItem("userWallet");
@@ -488,19 +495,6 @@ if (savedWallet) {
     document.getElementById("walletInput").value = savedWallet;
     loadPlayerStats(); // Langsung muat statistik mereka
 }
-
-
-/* =========================
-SUPABASE
-========================= */
-
-const SUPABASE_URL="https://httrpszijmmegabceslr.supabase.co"
-const SUPABASE_KEY="sb_publishable_69Vl5Jd1Vyj_-4NrA7nl6Q_KQw1h1yi"
-
-const supabaseClient=window.supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
-)
 
 /* =========================
 CANVAS
@@ -554,7 +548,7 @@ let lastTap=0
 
 let isSoundEnabled=true
 
-let gameStartTimestamp = 0; // Untuk mencatat kapan game benar-benar dimulai
+let gameStartTimestamp = 0; 
 
 
 /* =========================
@@ -570,19 +564,15 @@ return w.slice(0,6)+"..."+w.slice(-4)
    NAVBAR & MODAL LOGIC
 ========================= */
 window.showAbout = function() {
-    // Tutup leaderboard jika sedang terbuka
     document.getElementById("leaderboardOverlay").style.display = "none";
-    // Buka about
     document.getElementById("aboutOverlay").style.display = "flex";
 }
 
 window.closeAllModals = function() {
-    // Menutup semua pop-up modal
     document.getElementById("leaderboardOverlay").style.display = "none";
     document.getElementById("aboutOverlay").style.display = "none";
 }
 
-// Update fungsi Escape key agar menutup semua modal
 document.addEventListener("keydown", (e) => {
     if(e.key === "Escape"){
         closeAllModals();
@@ -747,10 +737,6 @@ jumpSound.play().catch(()=>{})
 START GAME
 ========================= */
 
-/* =========================
-START GAME
-========================= */
-
 async function startGame(){
 
 if(isStarting)return
@@ -775,10 +761,11 @@ return
 localStorage.setItem("userWallet",wallet)
 
 document.getElementById("walletDisplay").innerText=wallet
-document.querySelector('.bottom-navbar').style.display = "none";
 
-// 👇 INI TAMBAHANNYA AGAR STAT LANGSUNG MUNCUL 👇
-loadPlayerStats();
+let bottomNav = document.querySelector('.bottom-navbar');
+if(bottomNav) bottomNav.style.display = "none";
+
+loadPlayerStats(); 
 
 /* UI */
 
@@ -786,6 +773,7 @@ document.getElementById("menuOverlay").style.display="none"
 document.querySelector(".stats").style.display="block"
 document.getElementById("marqueeBox").style.display="none"
 document.getElementById("tapHint").style.display="none"
+
 /* reset */
 
 birdY=200
@@ -887,7 +875,9 @@ document.getElementById("menuOverlay").style.display="flex"
 
 document.querySelector(".stats").style.display="none"
 document.getElementById("marqueeBox").style.display="block"
-document.querySelector('.bottom-navbar').style.display = "flex";
+
+let bottomNav = document.querySelector('.bottom-navbar');
+if(bottomNav) bottomNav.style.display = "flex";
 
 bgm.pause()
 bgm.currentTime=0
@@ -926,16 +916,14 @@ SAVE SCORE WITH ANTI-CHEAT
 ========================= */
 async function saveScore(wallet) {
     try {
-        // 1. Anti-Cheat: Cek apakah skor masuk akal dibanding durasi main
         const playDuration = (Date.now() - gameStartTime) / 1000;
-        const maxPossibleScore = playDuration * 1.5; // Max 1.5 poin per detik
+        const maxPossibleScore = playDuration * 1.5; 
 
         if (score > 10 && score > maxPossibleScore) {
             console.error("Skor tidak valid berdasarkan durasi bermain!");
             return; 
         }
 
-        // 2. Ambil skor lama dari database
         const { data: currentData } = await supabaseClient
             .from("flappy_bags_scores")
             .select("score")
@@ -945,7 +933,6 @@ async function saveScore(wallet) {
         const oldScore = currentData ? currentData.score : 0;
         playerHighScore = Math.max(score, oldScore);
 
-        // 3. Update database jika ada skor baru yang lebih tinggi
         if (!currentData || score > oldScore) {
             await supabaseClient
                 .from("flappy_bags_scores")
@@ -1036,40 +1023,43 @@ PLAYER STATS
 ========================= */
 
 async function loadPlayerStats(){
+    const wallet=localStorage.getItem("userWallet")
+    if(!wallet)return
 
-const wallet=localStorage.getItem("userWallet")
+    try{
+        const {data}=await supabaseClient
+        .from("flappy_bags_scores")
+        .select("wallet,score")
+        .order("score",{ascending:false})
 
-if(!wallet)return
+        if(!data)return
 
-try{
+        let rank="-"
+        let bestScore=0
+        let hasPlayed=false
 
-const {data}=await supabaseClient
-.from("flappy_bags_scores")
-.select("wallet,score")
-.order("score",{ascending:false})
+        for(let i=0;i<data.length;i++){
+            if(data[i].wallet===wallet){
+                rank=i+1
+                bestScore=parseInt(data[i].score) || 0
+                hasPlayed=true
+                break
+            }
+        }
 
-if(!data)return
+        playerHighScore = bestScore
 
-let rank="-"
-let bestScore="-"
+        let rDisplay = document.getElementById("playerRank")
+        let sDisplay = document.getElementById("playerScore")
+        let hDisplay = document.getElementById("highScoreText")
 
-for(let i=0;i<data.length;i++){
+        if(rDisplay) rDisplay.innerText="Rank: "+(rank!=="-"?"#"+rank:"-")
+        if(sDisplay) sDisplay.innerText="Best Score: "+(hasPlayed?bestScore:"-")
+        if(hDisplay) hDisplay.innerText="High Score: "+bestScore
 
-if(data[i].wallet===wallet){
-rank=i+1
-bestScore=data[i].score
-break
-}
-
-}
-
-document.getElementById("playerRank").innerText="Rank: "+(rank!=="-"?"#"+rank:"-")
-document.getElementById("playerScore").innerText="Best Score: "+bestScore
-
-}catch(e){
-console.log(e)
-}
-
+    }catch(e){
+        console.log(e)
+    }
 }
 
 /* =========================
@@ -1130,11 +1120,6 @@ document.getElementById("myScoreDisplay").innerText=
 window.closeLeaderboard = function() {
     document.getElementById("leaderboardOverlay").style.display = "none";
 };
-document.addEventListener("keydown",(e)=>{
-if(e.key==="Escape"){
-closeLeaderboard()
-}
-})
 
 /* =========================
 INIT
