@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Bagsapp | A simple GameFi</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+
+
 <style>
 body {
     width: 100%;
@@ -883,6 +886,31 @@ window.disconnectWallet = async function() {
     }
 }
 
+/* =========================
+CEK SALDO TOKEN (DI LATAR BELAKANG)
+========================= */
+async function checkTokenBalance(walletAddress) {
+    try {
+        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+        const ownerPublicKey = new solanaWeb3.PublicKey(walletAddress);
+        
+        // GANTI INI DENGAN CONTRACT ADDRESS $FLAPPYBAGS MILIKMU!
+        const TOKEN_MINT_ADDRESS = "MASUKKAN_CONTRACT_ADDRESS_DI_SINI"; 
+        const tokenMintPublicKey = new solanaWeb3.PublicKey(TOKEN_MINT_ADDRESS);
+
+        const response = await connection.getParsedTokenAccountsByOwner(ownerPublicKey, {
+            mint: tokenMintPublicKey
+        });
+
+        if (response.value.length === 0) return 0; 
+
+        const balanceString = response.value[0].account.data.parsed.info.tokenAmount.uiAmountString;
+        return parseFloat(balanceString);
+    } catch (err) {
+        console.error("Gagal mengecek saldo token:", err);
+        return 0; 
+    }
+}
 
 /* =========================
 GAME OVER
@@ -986,20 +1014,24 @@ scoreText.innerText="Skor: "+score
 }
 
 /* =========================
-SAVE SCORE WITH ANTI-CHEAT
+SAVE SCORE DENGAN CEK ELIGIBILITY
 ========================= */
 async function saveScore(wallet) {
     try {
-        // 1. Anti-Cheat: Cek apakah skor masuk akal dibanding durasi main
+        // 1. Anti-Cheat Durasi
         const playDuration = (Date.now() - gameStartTime) / 1000;
-        const maxPossibleScore = playDuration * 1.5; // Max 1.5 poin per detik
+        const maxPossibleScore = playDuration * 1.5; 
 
         if (score > 10 && score > maxPossibleScore) {
-            console.error("Skor tidak valid berdasarkan durasi bermain!");
+            console.error("Skor tidak valid!");
             return; 
         }
 
-        // 2. Ambil skor lama dari database
+        // 2. Cek Saldo Token untuk Eligibility
+        const balance = await checkTokenBalance(wallet);
+        const isEligible = balance >= 200000; // Minimal 200,000 token
+
+        // 3. Ambil data lama dari Supabase
         const { data: currentData } = await supabaseClient
             .from("flappy_bags_scores")
             .select("score")
@@ -1009,13 +1041,15 @@ async function saveScore(wallet) {
         const oldScore = currentData ? currentData.score : 0;
         playerHighScore = Math.max(score, oldScore);
 
-        // 3. Update database jika ada skor baru yang lebih tinggi
+        // 4. Update Database
         if (!currentData || score > oldScore) {
+            // Jika ada skor baru (atau player baru)
             await supabaseClient
                 .from("flappy_bags_scores")
                 .upsert({ 
                     wallet: wallet, 
                     score: playerHighScore,
+                    is_eligible: isEligible, // <-- Kirim status eligible
                     updated_at: new Date()
                 }, { onConflict: 'wallet' });
             
@@ -1024,6 +1058,13 @@ async function saveScore(wallet) {
                 msg.style.display = "block";
                 setTimeout(() => msg.style.display = "none", 2000);
             }
+        } else {
+            // Jika skor tidak lebih tinggi, TAPI kita tetap update status tokennya
+            // (Siapa tahu mereka baru beli token saat skornya sudah tinggi)
+            await supabaseClient
+                .from("flappy_bags_scores")
+                .update({ is_eligible: isEligible, updated_at: new Date() })
+                .eq("wallet", wallet);
         }
 
         document.getElementById("highScoreText").innerText = "High Score: " + playerHighScore;
@@ -1035,66 +1076,72 @@ async function saveScore(wallet) {
 
 
 /* =========================
-LEADERBOARD
+LEADERBOARD DENGAN LABEL STATUS
 ========================= */
 async function loadLeaderboard(){
+    try {
+        // PENTING: Tambahkan "is_eligible" di query select
+        const {data,error}=await supabaseClient
+            .from("flappy_bags_scores")
+            .select("wallet,score,is_eligible")
+            .order("score",{ascending:false})
+            .limit(10)
 
-try{
+        if(error){
+            console.log(error)
+            return
+        }
 
-const {data,error}=await supabaseClient
-.from("flappy_bags_scores")
-.select("wallet,score")
-.order("score",{ascending:false})
-.limit(10)
+        const liveList=document.getElementById("leaderboardList")
+        const popupList=document.getElementById("popupLeaderboardList")
 
-if(error){
-console.log(error)
-return
+        liveList.innerHTML=""
+        popupList.innerHTML=""
+
+        const myWallet=localStorage.getItem("userWallet")
+
+        data.forEach((row,i)=>{
+            let medal=""
+            if(i===0)medal="🥇"
+            if(i===1)medal="🥈"
+            if(i===2)medal="🥉"
+
+            // Tentukan Badge Eligibility
+            const statusBadge = row.is_eligible 
+                ? `<span style="color:#00ff00; font-size:10px; margin-left:6px; background:#003300; padding:2px 4px; border-radius:4px;">✅ Eligible</span>` 
+                : `<span style="color:#ff4444; font-size:10px; margin-left:6px; background:#330000; padding:2px 4px; border-radius:4px;">❌ Non-Eligible</span>`;
+
+            const html=`
+            <div style="display: flex; align-items: center;">
+                <span>${medal} ${i+1}. ${formatWallet(row.wallet)}</span>
+                ${statusBadge}
+            </div>
+            <span style="font-weight:bold;">${row.score}</span>
+            `
+
+            const li1=document.createElement("li")
+            li1.innerHTML=html
+
+            const li2=document.createElement("li")
+            li2.innerHTML=html
+
+            if(row.wallet===myWallet){
+                // Highlight warna untuk dompet sendiri
+                li1.style.background="rgba(0,255,0,0.15)"
+                li2.style.background="rgba(0,255,0,0.15)"
+            }
+
+            liveList.appendChild(li1)
+            popupList.appendChild(li2)
+        })
+
+        loadPlayerStats()
+
+    } catch(e) {
+        console.log(e)
+    }
 }
 
-const liveList=document.getElementById("leaderboardList")
-const popupList=document.getElementById("popupLeaderboardList")
-
-liveList.innerHTML=""
-popupList.innerHTML=""
-
-const myWallet=localStorage.getItem("userWallet")
-
-data.forEach((row,i)=>{
-
-let medal=""
-if(i===0)medal="🥇"
-if(i===1)medal="🥈"
-if(i===2)medal="🥉"
-
-const html=`
-<span>${medal} ${i+1}. ${formatWallet(row.wallet)}</span>
-<span>${row.score}</span>
-`
-
-const li1=document.createElement("li")
-li1.innerHTML=html
-
-const li2=document.createElement("li")
-li2.innerHTML=html
-
-if(row.wallet===myWallet){
-li1.style.color="#00ff90"
-li2.style.color="#00ff90"
-}
-
-liveList.appendChild(li1)
-popupList.appendChild(li2)
-
-})
-
-loadPlayerStats()
-
-}catch(e){
-console.log(e)
-}
-
-}
 /* =========================
 PLAYER STATS
 ========================= */
