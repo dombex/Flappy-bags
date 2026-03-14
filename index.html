@@ -280,12 +280,17 @@ body {
 
         <div id="gameContainer">
             <div id="menuOverlay">
-                <h2 style="color: #00ff00;">MAIN MENU</h2>
-                <input type="text" id="walletInput" placeholder="Input your wallet address" style="padding: 10px; border-radius: 10px; margin-bottom: 10px; width: 200px;">
-                <button onclick="startGame()">START GAME</button>
-                <button onclick="showLeaderboard()">LEADERBOARD</button>
-                <button id="soundBtn" onclick="toggleSound()">SOUND: ON</button>
-            </div>
+    <h2 style="color: #00ff00;">MAIN MENU</h2>
+    
+    <button id="connectWalletBtn" onclick="connectWallet()">CONNECT WALLET</button>
+    <p id="walletStatus" style="font-size:12px; color:#aaa; margin-bottom:5px;">Belum terhubung</p>
+    <button id="disconnectWalletBtn" onclick="disconnectWallet()" style="display:none; padding: 6px 15px; font-size: 10px; width: auto; margin-bottom: 15px; border-color: #ff4444; color: #ff4444;">DISCONNECT</button>
+    
+    <button onclick="startGame()">START GAME</button>
+    <button onclick="showLeaderboard()">LEADERBOARD</button>
+    <button id="soundBtn" onclick="toggleSound()">SOUND: ON</button>
+</div>
+
             <div id="newRecordMsg" style="position:absolute;top:20%;width:100%;color:#ffff00;font-weight:bold;font-size:24px;display:none;text-shadow:0 0 10px #ff0000;z-index:5;">🏆 NEW HIGH SCORE!</div>
             <canvas id="gameCanvas" width="320" height="480"></canvas>
             <div id="tapHint" style="position:absolute;bottom:80px;width:100%;text-align:center;color:#00ff00;font-size:12px;opacity:0.8;pointer-events:none;animation:pulse 1.2s infinite;">TAP SCREEN TO JUMP</div>
@@ -490,11 +495,27 @@ window.switchPage = function(pageId) {
 
 document.addEventListener("DOMContentLoaded",()=>{
 
-// Auto-fill wallet jika sudah pernah main
+// Auto-check wallet jika sudah pernah terhubung
 const savedWallet = localStorage.getItem("userWallet");
 if (savedWallet) {
-    document.getElementById("walletInput").value = savedWallet;
-    loadPlayerStats(); // Langsung muat statistik mereka
+    const btn = document.getElementById("connectWalletBtn");
+    if(btn) {
+        btn.innerText = "WALLET CONNECTED";
+        btn.style.background = "#00ff00";
+        btn.style.color = "#000";
+    }
+    const status = document.getElementById("walletStatus");
+    if(status) {
+        status.innerText = formatWallet(savedWallet);
+    }
+    
+    // Munculkan tombol disconnect saat auto-login
+    const disconnectBtn = document.getElementById("disconnectWalletBtn");
+    if(disconnectBtn) {
+        disconnectBtn.style.display = "inline-block";
+    }
+    
+    loadPlayerStats(); 
 }
 
 
@@ -755,74 +776,113 @@ jumpSound.play().catch(()=>{})
 /* =========================
 START GAME
 ========================= */
-
 async function startGame(){
 
-if(isStarting)return
-isStarting=true
+    if(isStarting)return
+    isStarting=true
 
-const walletInput=document.getElementById("walletInput")
+    // Ambil wallet langsung dari localStorage (hasil dari connectWallet)
+    let wallet = localStorage.getItem("userWallet")
 
-let wallet=walletInput.value.trim()
+    if(!wallet){
+        alert("Silakan Connect Wallet terlebih dahulu sebelum bermain!")
+        isStarting=false
+        return
+    }
 
-if(!wallet){
-wallet=localStorage.getItem("userWallet")
+    document.getElementById("walletDisplay").innerText=formatWallet(wallet) 
+    document.querySelector('.bottom-navbar').style.display = "none";
+
+    /* UI */
+    document.getElementById("menuOverlay").style.display="none"
+    document.querySelector(".stats").style.display="block"
+    document.getElementById("marqueeBox").style.display="none"
+    document.getElementById("tapHint").style.display="none"
+
+    /* reset */
+    birdY=200
+    velocity=0
+    score=0
+    spawnTimer=0
+    pipes=[{x:320,y:150,passed:false}]
+    coins=[]
+
+    updateScoreUI()
+    gameRunning=true
+    isGameOver=false
+    gameStartTime=Date.now()
+
+    window.addEventListener("mousedown",jump,{passive:false})
+    window.addEventListener("touchstart",jump,{passive:false})
+
+    if(isSoundEnabled){
+        bgm.currentTime=0
+        bgm.play().catch(()=>{})
+    }
+
+    isStarting=false
+    loop()
 }
 
-if(!wallet || wallet.length<32){
+/* =========================
+CONNECT WALLET (PHANTOM)
+========================= */
+window.connectWallet = async function() {
+    try {
+        const { solana } = window;
 
-alert("Invalid Solana Wallet")
-
-isStarting=false
-return
+        if (solana && solana.isPhantom) {
+            const response = await solana.connect();
+            const publicKey = response.publicKey.toString();
+            
+            localStorage.setItem("userWallet", publicKey);
+            
+            const btn = document.getElementById("connectWalletBtn");
+            btn.innerText = "WALLET CONNECTED";
+            btn.style.background = "#00ff00";
+            btn.style.color = "#000";
+            document.getElementById("walletStatus").innerText = formatWallet(publicKey);
+            document.getElementById("disconnectWalletBtn").style.display = "inline-block";
+            
+            loadPlayerStats();
+        } else {
+            alert("Phantom Wallet tidak terdeteksi! Silakan install ekstensi Phantom di browser kamu.");
+            window.open("https://phantom.app/", "_blank");
+        }
+    } catch (err) {
+        console.error("Gagal menghubungkan wallet:", err);
+    }
 }
 
-localStorage.setItem("userWallet",wallet)
-
-document.getElementById("walletDisplay").innerText=wallet
-document.querySelector('.bottom-navbar').style.display = "none";
-
-
-/* UI */
-
-document.getElementById("menuOverlay").style.display="none"
-document.querySelector(".stats").style.display="block"
-document.getElementById("marqueeBox").style.display="none"
-document.getElementById("tapHint").style.display="none"
-
-/* reset */
-
-birdY=200
-velocity=0
-
-score=0
-spawnTimer=0
-
-pipes=[{x:320,y:150,passed:false}]
-coins=[]
-
-updateScoreUI()
-
-gameRunning=true
-isGameOver=false
-
-gameStartTime=Date.now()
-
-window.addEventListener("mousedown",jump,{passive:false})
-window.addEventListener("touchstart",jump,{passive:false})
-
-if(isSoundEnabled){
-
-bgm.currentTime=0
-bgm.play().catch(()=>{})
-
+/* =========================
+DISCONNECT WALLET
+========================= */
+window.disconnectWallet = async function() {
+    try {
+        if (window.solana && window.solana.isPhantom) {
+            await window.solana.disconnect();
+        }
+        
+        localStorage.removeItem("userWallet");
+        
+        const btn = document.getElementById("connectWalletBtn");
+        btn.innerText = "CONNECT WALLET";
+        btn.style.background = "transparent";
+        btn.style.color = "#00ff00";
+        
+        document.getElementById("walletStatus").innerText = "Belum terhubung";
+        document.getElementById("disconnectWalletBtn").style.display = "none";
+        
+        document.getElementById("playerRank").innerText = "Rank: -";
+        document.getElementById("playerScore").innerText = "Best Score: -";
+        
+        playerHighScore = 0;
+        
+    } catch (err) {
+        console.error("Gagal disconnect wallet:", err);
+    }
 }
 
-isStarting=false
-
-loop()
-
-}
 
 /* =========================
 GAME OVER
