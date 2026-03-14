@@ -261,6 +261,23 @@ body {
 </head>
 <body>
 
+<div id="walletModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index:2000; justify-content:center; align-items:center;">
+    <div style="background:#111; border:2px solid #00ff00; padding:20px; border-radius:15px; text-align:center; width: 80%; max-width: 280px; box-shadow: 0 0 20px rgba(0,255,0,0.2);">
+        <h3 style="color:#00ff00; margin-top:0; margin-bottom: 20px;">Pilih Wallet</h3>
+        
+        <button onclick="connectPhantom()" style="width: 100%; margin: 10px 0; background: #5334c7; color: white; border: none; display: flex; justify-content: center; align-items: center; gap: 10px;">
+            <img src="https://phantom.app/img/logo.png" style="width: 20px;"> PHANTOM
+        </button>
+        
+        <button onclick="connectSolflare()" style="width: 100%; margin: 10px 0; background: #fc7a21; color: white; border: none; display: flex; justify-content: center; align-items: center; gap: 10px;">
+            <img src="https://solflare.com/assets/logo/logo-orange.svg" style="width: 20px;"> SOLFLARE
+        </button>
+        
+        <button onclick="closeWalletModal()" style="width: 100%; margin-top: 20px; border-color: #ff4444; color: #ff4444;">BATAL</button>
+    </div>
+</div>
+
+
     <div id="page-home" class="app-page active">
         <div class="dev-banner">
             <img src="logo.png" alt="" style="height: 12px; vertical-align: middle; margin-right: 3px;">
@@ -285,7 +302,7 @@ body {
             <div id="menuOverlay">
     <h2 style="color: #00ff00;">MAIN MENU</h2>
     
-    <button id="connectWalletBtn" onclick="connectWallet()">CONNECT WALLET</button>
+    <button id="connectWalletBtn" onclick="openWalletModal()">CONNECT WALLET</button>
     <p id="walletStatus" style="font-size:12px; color:#aaa; margin-bottom:5px;">Belum terhubung</p>
     <button id="disconnectWalletBtn" onclick="disconnectWallet()" style="display:none; padding: 6px 15px; font-size: 10px; width: auto; margin-bottom: 15px; border-color: #ff4444; color: #ff4444;">DISCONNECT</button>
     
@@ -315,7 +332,7 @@ body {
             <div class="caution-row"><span>Name:</span> <span>Flappy Bags Coin</span></div>
             <div class="caution-row"><span>Ticker:</span> <span>$FlappyBags</span></div>
             <div class="caution-row"><span>Contract:</span> <span>BAGS</span></div>
-            <div class="warning-text">"No need connect wallet for your safety"</div>
+            <div class="warning-text">"Connect New wallet for your safety"</div>
             <div class="warning-text">Please make sure your wallet address is correct.</div>
         </div>
 
@@ -500,6 +517,8 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 // Auto-check wallet jika sudah pernah terhubung
 const savedWallet = localStorage.getItem("userWallet");
+const savedWalletType = localStorage.getItem("walletType") || ""; // Ambil tipe wallet
+
 if (savedWallet) {
     const btn = document.getElementById("connectWalletBtn");
     if(btn) {
@@ -509,10 +528,10 @@ if (savedWallet) {
     }
     const status = document.getElementById("walletStatus");
     if(status) {
-        status.innerText = formatWallet(savedWallet);
+        // Tampilkan juga nama dompetnya
+        status.innerText = formatWallet(savedWallet) + (savedWalletType ? ` (${savedWalletType})` : "");
     }
     
-    // Munculkan tombol disconnect saat auto-login
     const disconnectBtn = document.getElementById("disconnectWalletBtn");
     if(disconnectBtn) {
         disconnectBtn.style.display = "inline-block";
@@ -520,6 +539,7 @@ if (savedWallet) {
     
     loadPlayerStats(); 
 }
+
 
 
 /* =========================
@@ -793,14 +813,23 @@ async function startGame(){
         return
     }
 
-    document.getElementById("walletDisplay").innerText=formatWallet(wallet) 
-    document.querySelector('.bottom-navbar').style.display = "none";
-
-    /* UI */
+        /* UI */
     document.getElementById("menuOverlay").style.display="none"
     document.querySelector(".stats").style.display="block"
     document.getElementById("marqueeBox").style.display="none"
     document.getElementById("tapHint").style.display="none"
+
+    // --- TAMBAHAN BARU: Sembunyikan elemen bawah agar layar bersih ---
+    document.getElementById("liveLeaderboard").style.display = "none";
+    document.querySelector(".info-container").style.display = "none";
+    document.querySelector(".caution-box").style.display = "none"; 
+    document.querySelector(".buy-container").style.display = "none"; 
+    document.querySelector("footer").style.display = "none";
+    
+    // --- TAMBAHAN BARU: Scroll otomatis ke area game ---
+    // 'behavior: smooth' memberikan efek meluncur yang halus
+    // 'block: center' akan memposisikan game pas di tengah layar HP
+    document.getElementById("gameContainer").scrollIntoView({ behavior: "smooth", block: "center" });
 
     /* reset */
     birdY=200
@@ -828,33 +857,61 @@ async function startGame(){
 }
 
 /* =========================
-CONNECT WALLET (PHANTOM)
+WALLET MODAL LOGIC
 ========================= */
-window.connectWallet = async function() {
-    try {
-        const { solana } = window;
+window.openWalletModal = function() {
+    document.getElementById("walletModal").style.display = "flex";
+}
+window.closeWalletModal = function() {
+    document.getElementById("walletModal").style.display = "none";
+}
 
-        if (solana && solana.isPhantom) {
-            const response = await solana.connect();
-            const publicKey = response.publicKey.toString();
-            
-            localStorage.setItem("userWallet", publicKey);
-            
-            const btn = document.getElementById("connectWalletBtn");
-            btn.innerText = "WALLET CONNECTED";
-            btn.style.background = "#00ff00";
-            btn.style.color = "#000";
-            document.getElementById("walletStatus").innerText = formatWallet(publicKey);
-            document.getElementById("disconnectWalletBtn").style.display = "inline-block";
-            
-            loadPlayerStats();
-        } else {
-            alert("Phantom Wallet tidak terdeteksi! Silakan install ekstensi Phantom di browser kamu.");
-            window.open("https://phantom.app/", "_blank");
+/* =========================
+HANDLE CONNECT GLOBAL
+========================= */
+async function processConnection(provider, walletName) {
+    try {
+        if (!provider) {
+            alert(`${walletName} Wallet tidak terdeteksi! Silakan install ekstensinya.`);
+            if(walletName === "Phantom") window.open("https://phantom.app/", "_blank");
+            if(walletName === "Solflare") window.open("https://solflare.com/", "_blank");
+            return;
         }
+
+        const response = await provider.connect();
+        const publicKey = response.publicKey.toString();
+        
+        // Simpan alamat dan tipe wallet
+        localStorage.setItem("userWallet", publicKey);
+        localStorage.setItem("walletType", walletName);
+        
+        // Update UI
+        const btn = document.getElementById("connectWalletBtn");
+        btn.innerText = "WALLET CONNECTED";
+        btn.style.background = "#00ff00";
+        btn.style.color = "#000";
+        document.getElementById("walletStatus").innerText = formatWallet(publicKey) + ` (${walletName})`;
+        document.getElementById("disconnectWalletBtn").style.display = "inline-block";
+        
+        closeWalletModal();
+        loadPlayerStats();
     } catch (err) {
-        console.error("Gagal menghubungkan wallet:", err);
+        console.error(`Gagal menghubungkan ${walletName}:`, err);
     }
+}
+
+/* =========================
+CONNECT SPECIFIC WALLETS
+========================= */
+window.connectPhantom = function() {
+    // Phantom bisa berada di window.phantom.solana atau window.solana
+    const provider = window.phantom?.solana || window.solana;
+    processConnection(provider, "Phantom");
+}
+
+window.connectSolflare = function() {
+    const provider = window.solflare;
+    processConnection(provider, "Solflare");
 }
 
 /* =========================
@@ -862,12 +919,21 @@ DISCONNECT WALLET
 ========================= */
 window.disconnectWallet = async function() {
     try {
-        if (window.solana && window.solana.isPhantom) {
-            await window.solana.disconnect();
+        const walletType = localStorage.getItem("walletType");
+        
+        // Disconnect sesuai tipe wallet yang sedang aktif
+        if (walletType === "Phantom") {
+            const provider = window.phantom?.solana || window.solana;
+            if (provider) await provider.disconnect();
+        } else if (walletType === "Solflare") {
+            if (window.solflare) await window.solflare.disconnect();
         }
         
+        // Hapus memori
         localStorage.removeItem("userWallet");
+        localStorage.removeItem("walletType");
         
+        // Reset UI
         const btn = document.getElementById("connectWalletBtn");
         btn.innerText = "CONNECT WALLET";
         btn.style.background = "transparent";
@@ -885,6 +951,7 @@ window.disconnectWallet = async function() {
         console.error("Gagal disconnect wallet:", err);
     }
 }
+
 
 /* =========================
 CEK SALDO TOKEN (DI LATAR BELAKANG)
@@ -964,27 +1031,34 @@ startGame()
 /* =========================
 QUIT
 ========================= */
-
 window.quitGame=function(){
 
-gameRunning=false
+    gameRunning=false
+    cancelAnimationFrame(animationId)
+    window.removeEventListener("mousedown",jump)
+    window.removeEventListener("touchstart",jump)
 
-cancelAnimationFrame(animationId)
+    document.getElementById("gameOverOverlay").style.display="none"
+    document.getElementById("menuOverlay").style.display="flex"
 
-window.removeEventListener("mousedown",jump)
-window.removeEventListener("touchstart",jump)
+    document.querySelector(".stats").style.display="none"
+    document.getElementById("marqueeBox").style.display="block"
+    document.querySelector('.bottom-navbar').style.display = "flex";
 
-document.getElementById("gameOverOverlay").style.display="none"
-document.getElementById("menuOverlay").style.display="flex"
+    // --- TAMBAHAN BARU: Munculkan kembali elemen bawah ---
+    document.getElementById("liveLeaderboard").style.display = "block";
+    document.querySelector(".info-container").style.display = "block";
+    document.querySelector(".caution-box").style.display = "block";
+    document.querySelector(".buy-container").style.display = "flex"; // Ingat, aslinya pakai flex
+    document.querySelector("footer").style.display = "block";
 
-document.querySelector(".stats").style.display="none"
-document.getElementById("marqueeBox").style.display="block"
-document.querySelector('.bottom-navbar').style.display = "flex";
+    // --- TAMBAHAN BARU: Scroll kembali ke paling atas halaman ---
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
-bgm.pause()
-bgm.currentTime=0
-
+    bgm.pause()
+    bgm.currentTime=0
 }
+
 
 /* =========================
 SHARE
